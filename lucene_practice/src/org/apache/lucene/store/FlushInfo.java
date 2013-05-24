@@ -20,21 +20,22 @@ package org.apache.lucene.store;
 /**
  * <p>A FlushInfo provides information required for a FLUSH context.
  *  It is used as part of an {@link IOContext} in case of FLUSH context.</p>
+ *  FLUSH context的一些信息, 做为IOContext的一部分使用.
  */
 
 
 public class FlushInfo {
   
-  public final int numDocs;
+  public final int numDocs; // doc的数量
   
-  public final long estimatedSegmentSize;
+  public final long estimatedSegmentSize; //估算的Segment的大小
   
   /**
    * <p>Creates a new {@link org.apache.lucene.store.FlushInfo} instance from
    * the values required for a FLUSH {@link IOContext} context.
    * 
    * These values are only estimates and are not the actual values.
-   * 
+   *  这些数值都是估算的, 不是真实的数值.
    */
   
   public FlushInfo(int numDocs, long estimatedSegmentSize) {

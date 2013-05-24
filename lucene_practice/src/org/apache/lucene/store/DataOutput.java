@@ -57,6 +57,8 @@ public abstract class DataOutput {
    * @param offset the offset in the byte array
    * @param length the number of bytes to write
    * @see org.apache.lucene.store.DataInput#readBytes(byte[],int,int)
+   * 
+   * 写入一个byte数组, 从offset开始写入length长度
    */
   public abstract void writeBytes(byte[] b, int offset, int length) throws IOException;
 
@@ -237,22 +239,28 @@ public abstract class DataOutput {
   }
 
   private static int COPY_BUFFER_SIZE = 16384;
-  private byte[] copyBuffer;
+  private byte[] copyBuffer; // 拷贝的缓存
 
-  /** Copy numBytes bytes from input to ourself. */
+  /** Copy numBytes bytes from input to ourself. 
+   * 拷贝numBytes数量的byte, 到这里
+   * */
   public void copyBytes(DataInput input, long numBytes) throws IOException {
     assert numBytes >= 0: "numBytes=" + numBytes;
     long left = numBytes;
     if (copyBuffer == null)
       copyBuffer = new byte[COPY_BUFFER_SIZE];
+    // 一直拷贝直到没有剩余
     while(left > 0) {
       final int toCopy;
       if (left > COPY_BUFFER_SIZE)
         toCopy = COPY_BUFFER_SIZE;
       else
         toCopy = (int) left;
+      // 读取toCopy数量的byte到缓存
       input.readBytes(copyBuffer, 0, toCopy);
+      // 把读入缓存的byte写入
       writeBytes(copyBuffer, 0, toCopy);
+      // 减去当前已经读取的大小
       left -= toCopy;
     }
   }

@@ -22,12 +22,17 @@ package org.apache.lucene.store;
  * object can never be initialized as null as passed as a parameter to either
  * {@link Directory#openInput(String, org.apache.lucene.store.IOContext)} or
  * {@link Directory#createOutput(String, org.apache.lucene.store.IOContext)}
+ * 
+ * IOContext包含额外的信息在merge/search context.
+ * 一个IOContexnt不会被出是化为null做为一个参数传入Directory.openInput()或者
+ * Directory.createOutput()
  */
 public class IOContext {
 
   /**
    * Context is a enumerator which specifies the context in which the Directory
    * is being used for.
+   * Context是一个枚举, 指定当前的Directory是用来做什么的.
    */
   public enum Context {
     MERGE, READ, FLUSH, DEFAULT
@@ -36,24 +41,31 @@ public class IOContext {
   /**
    * An object of a enumerator Context type
    */
-  public final Context context;
+  public final Context context; // 当前Directory的用途
 
-  public final MergeInfo mergeInfo;
+  public final MergeInfo mergeInfo; // merge需要用的信息
 
-  public final FlushInfo flushInfo;
+  public final FlushInfo flushInfo; // flush需要用的信息
 
-  public final boolean readOnce;
+  public final boolean readOnce; // 只读一次?
 
   public static final IOContext DEFAULT = new IOContext(Context.DEFAULT);
 
-  public static final IOContext READONCE = new IOContext(true);
+  public static final IOContext READONCE = new IOContext(true); // 读, 并且只读一次
 
-  public static final IOContext READ = new IOContext(false);
-
+  public static final IOContext READ = new IOContext(false); // 读, 可能不只读一次
+  
+  /**
+   * 默认是读的参数, 并且不限制读的次数
+   */
   public IOContext() {
     this(false);
   }
 
+  /**
+   * 实例化一个用于flush的IOContext
+   * @param flushInfo
+   */
   public IOContext(FlushInfo flushInfo) {
     assert flushInfo != null;
     this.context = Context.FLUSH;
@@ -66,6 +78,11 @@ public class IOContext {
     this(context, null);
   }
 
+  /**
+   * 实例化一个读的IOContext
+   * 可以指定是否为readOnce
+   * @param readOnce
+   */
   private IOContext(boolean readOnce) {
     this.context = Context.READ;
     this.mergeInfo = null;
@@ -77,6 +94,11 @@ public class IOContext {
     this(Context.MERGE, mergeInfo);
   }
   
+  /**
+   * 实例化一个Merge的IOContext
+   * @param context
+   * @param mergeInfo
+   */
   private IOContext(Context context, MergeInfo mergeInfo) {
     assert context != Context.MERGE || mergeInfo != null : "MergeInfo must not be null if context is MERGE";
     assert context != Context.FLUSH : "Use IOContext(FlushInfo) to create a FLUSH IOContext";

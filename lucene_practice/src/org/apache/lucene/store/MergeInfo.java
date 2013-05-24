@@ -19,17 +19,20 @@ package org.apache.lucene.store;
 /**
  * <p>A MergeInfo provides information required for a MERGE context.
  *  It is used as part of an {@link org.apache.lucene.store.IOContext} in case of MERGE context.</p>
+ *  
+ *  MergeInfo提供了在MERGE Context需要的信息.
+ *  它被用来做为IOContext中的一部分, 当是MERGE context的时候.
  */
 
 public class MergeInfo {
   
-  public final int totalDocCount;
+  public final int totalDocCount; // doc的总数
   
-  public final long estimatedMergeBytes;
+  public final long estimatedMergeBytes; //估算的Merge需要的Bytes?
   
-  public final boolean isExternal;
+  public final boolean isExternal; // 外部的?
   
-  public final int mergeMaxNumSegments;
+  public final int mergeMaxNumSegments; // merge的最大数量Segment的限制
   
 
   /**
@@ -37,7 +40,7 @@ public class MergeInfo {
    * the values required for a MERGE {@link org.apache.lucene.store.IOContext} context.
    * 
    * These values are only estimates and are not the actual values.
-   * 
+   * 创建一个MergeInfo实例, 这些数值都是估算的并不一定是确切的数值.
    */
 
   public MergeInfo(int totalDocCount, long estimatedMergeBytes, boolean isExternal, int mergeMaxNumSegments) {

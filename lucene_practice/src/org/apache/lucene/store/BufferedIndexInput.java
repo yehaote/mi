@@ -20,11 +20,13 @@ package org.apache.lucene.store;
 import java.io.EOFException;
 import java.io.IOException;
 
-/** Base implementation class for buffered {@link org.apache.lucene.store.IndexInput}. */
+/** Base implementation class for buffered {@link org.apache.lucene.store.IndexInput}.
+ *  带缓存的IndexInput抽象类 
+ * */
 public abstract class BufferedIndexInput extends IndexInput {
 
   /** Default buffer size set to 1024*/
-  public static final int BUFFER_SIZE = 1024;
+  public static final int BUFFER_SIZE = 1024; // 默认的缓存大小
   
   // The normal read buffer size defaults to 1024, but
   // increasing this during merging seems to yield
@@ -34,21 +36,24 @@ public abstract class BufferedIndexInput extends IndexInput {
   // LUCENE-888 for details.
   /**
    * A buffer size for merges set to 4096
+   * Merge缓存的默认大小为4096
    */
   public static final int MERGE_BUFFER_SIZE = 4096;
 
   private int bufferSize = BUFFER_SIZE;
   
-  protected byte[] buffer;
+  protected byte[] buffer; // 缓存实际存在的数组
   
-  private long bufferStart = 0;       // position in file of buffer
-  private int bufferLength = 0;       // end of valid bytes
-  private int bufferPosition = 0;     // next byte to read
+  private long bufferStart = 0;       // position in file of buffer 开始的位置
+  private int bufferLength = 0;       // end of valid bytes 长度
+  private int bufferPosition = 0;     // next byte to read 下一次读取发生的位置
 
   @Override
   public final byte readByte() throws IOException {
+	// 如果缓存的位置已经在缓存之外
     if (bufferPosition >= bufferLength)
       refill();
+    // 返回
     return buffer[bufferPosition++];
   }
 
@@ -92,7 +97,11 @@ public abstract class BufferedIndexInput extends IndexInput {
       }
     }
   }
-
+  
+  /**
+   * 切换buffer到新的buffer
+   * @param newBuffer
+   */
   protected void newBuffer(byte[] newBuffer) {
     // Subclasses can do something here
     buffer = newBuffer;
@@ -256,16 +265,26 @@ public abstract class BufferedIndexInput extends IndexInput {
     }
   }
   
+  /**
+   * 重新装载
+   * @throws IOException
+   */
   private void refill() throws IOException {
+	// 开始位置等于buffer开始的位置加buffer中当前的位置
+	// 类似于把现在在缓存中的那个位置设置为新的开始位置
     long start = bufferStart + bufferPosition;
+    // 新的end位置为新的开始位置+bufferSize
     long end = start + bufferSize;
+    // 如果end的位置超出文件最大长度, 则设置为最大长度
     if (end > length())  // don't read past EOF
       end = length();
+    // 当前整个buffer的长度为end-start
     int newLength = (int)(end - start);
     if (newLength <= 0)
       throw new EOFException("read past EOF: " + this);
-
+    // 如果buffer还没有初始化的话, 进行初始化
     if (buffer == null) {
+      // 懒加载
       newBuffer(new byte[bufferSize]);  // allocate buffer lazily
       seekInternal(bufferStart);
     }
