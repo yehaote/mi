@@ -27,7 +27,11 @@ import org.apache.lucene.util.ByteBlockPool;
  * by Posting and PostingVector.  We read the bytes in
  * each slice until we hit the end of that slice at which
  * point we read the forwarding address of the next slice
- * and then jump to it.*/
+ * and then jump to it.
+ * 
+ * 知道怎么去读取posting和postingVector写入的byte slice.
+ * 
+ * */
 final class ByteSliceReader extends DataInput {
   ByteBlockPool pool;
   int bufferUpto;

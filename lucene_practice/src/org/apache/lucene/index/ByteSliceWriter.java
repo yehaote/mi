@@ -25,6 +25,9 @@ import org.apache.lucene.util.ByteBlockPool;
  * Class to write byte streams into slices of shared
  * byte[].  This is used by DocumentsWriter to hold the
  * posting list for many terms in RAM.
+ * 
+ * 写入byte流到分配共享的byte数组的类.
+ * 这被DocumentWriter用来在内存中存储term的posting list.
  */
 
 final class ByteSliceWriter extends DataOutput {
@@ -33,7 +36,7 @@ final class ByteSliceWriter extends DataOutput {
   private int upto;
   private final ByteBlockPool pool;
 
-  int offset0;
+  int offset0; // 什么用?
 
   public ByteSliceWriter(ByteBlockPool pool) {
     this.pool = pool;
@@ -41,11 +44,17 @@ final class ByteSliceWriter extends DataOutput {
 
   /**
    * Set up the writer to write at address.
+   * 
+   * 设置writer到写入的地址
    */
   public void init(int address) {
+	// 定位到指定的分片?
     slice = pool.buffers[address >> ByteBlockPool.BYTE_BLOCK_SHIFT];
+    // 判断分片不为空
     assert slice != null;
+    // 取掩码?
     upto = address & ByteBlockPool.BYTE_BLOCK_MASK;
+    // 
     offset0 = address;
     assert upto < slice.length;
   }

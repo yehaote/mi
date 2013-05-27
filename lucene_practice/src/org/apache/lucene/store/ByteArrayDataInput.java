@@ -22,15 +22,22 @@ import org.apache.lucene.util.BytesRef;
 /** 
  * DataInput backed by a byte array.
  * <b>WARNING:</b> This class omits all low-level checks.
- * @lucene.experimental 
+ * 
+ * 使用byte[]来作为存储
+ * 注意: 这个类忽略低等级的检查
+ * @lucene.experimental
  */
 public final class ByteArrayDataInput extends DataInput {
 
-  private byte[] bytes;
+  private byte[] bytes; //后台存储的数据
 
-  private int pos;
-  private int limit;
-
+  private int pos;  // 当前的位置
+  private int limit; // 最大的位置
+  
+  /**
+   * 直接以整个数组作为一个输入的源
+   * @param bytes
+   */
   public ByteArrayDataInput(byte[] bytes) {
     reset(bytes);
   }
@@ -42,13 +49,19 @@ public final class ByteArrayDataInput extends DataInput {
   public ByteArrayDataInput() {
     reset(BytesRef.EMPTY_BYTES);
   }
-
+  
+  /**
+   * 重新设定一个数组, 并以直接做为源
+   * @param bytes
+   */
   public void reset(byte[] bytes) {
     reset(bytes, 0, bytes.length);
   }
 
   // NOTE: sets pos to 0, which is not right if you had
   // called reset w/ non-zero offset!!
+  // 注意这个方法使用的正确性, 如果是使用一个数组的一部分作为存储的话,
+  // 这样子reset会直接从那个array的0位开始读取.
   public void rewind() {
     pos = 0;
   }
@@ -60,7 +73,8 @@ public final class ByteArrayDataInput extends DataInput {
   public void setPosition(int pos) {
     this.pos = pos;
   }
-
+  
+  // 用数组的一部分做为一个源, 从offset开始, length长度
   public void reset(byte[] bytes, int offset, int len) {
     this.bytes = bytes;
     pos = offset;

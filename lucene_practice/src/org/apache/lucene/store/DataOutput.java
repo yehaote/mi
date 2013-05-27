@@ -30,6 +30,9 @@ import org.apache.lucene.util.UnicodeUtil;
  
  * <p>{@code DataOutput} may only be used from one thread, because it is not
  * thread safe (it keeps internal state like file position).
+ * 
+ * Lucene底层写入操作的抽象类
+ * 不是线程安全的, 应为会在class本地记录position的信息.
  */
 public abstract class DataOutput {
 
@@ -40,6 +43,10 @@ public abstract class DataOutput {
    * as sequences of bytes, so file formats are byte-order independent.
    * 
    * @see IndexInput#readByte()
+   * 
+   * 写入一个Byte
+   * 最主要的数据类型, 8bit长.
+   * 文件被访问的时候是byte数组. 其他的数据类型也可以定义成byte数组.
    */
   public abstract void writeByte(byte b) throws IOException;
 
@@ -47,6 +54,8 @@ public abstract class DataOutput {
    * @param b the bytes to write
    * @param length the number of bytes to write
    * @see org.apache.lucene.store.DataInput#readBytes(byte[],int,int)
+   * 
+   * 写入一个byte数组, 从0开始写入length长度
    */
   public void writeBytes(byte[] b, int length) throws IOException {
     writeBytes(b, 0, length);
@@ -67,6 +76,8 @@ public abstract class DataOutput {
    * 32-bit unsigned integer written as four bytes, high-order bytes first.
    * 
    * @see org.apache.lucene.store.DataInput#readInt()
+   * 
+   * 写入一个int, 4次写入byte
    */
   public void writeInt(int i) throws IOException {
     writeByte((byte)(i >> 24));
@@ -77,6 +88,8 @@ public abstract class DataOutput {
   
   /** Writes a short as two bytes.
    * @see org.apache.lucene.store.DataInput#readShort()
+   * 
+   * 写入一个short, 两个byte
    */
   public void writeShort(short i) throws IOException {
     writeByte((byte)(i >>  8));
@@ -91,6 +104,10 @@ public abstract class DataOutput {
    * low-order seven bits are appended as increasingly more significant bits in the
    * resulting integer value. Thus values from zero to 127 may be stored in a single
    * byte, values from 128 to 16,383 may be stored in two bytes, and so on.</p>
+   * 
+   * 写入一个变长编码的int. 占用1-5个byte.
+   * 越小的值占用越少的byte, 负数不支持.
+   * 一个byte. 高第一位储存是否还有其他的byte, 低1-7位储存值.
    * <p>VByte Encoding Example</p>
    * <table cellspacing="0" cellpadding="2" border="0">
    * <col width="64*">
@@ -183,6 +200,7 @@ public abstract class DataOutput {
    * </tr>
    * </table>
    * <p>This provides compression while still being efficient to decode.</p>
+   * 使用这个方法解压也非常快
    * 
    * @param i Smaller values take fewer bytes.  Negative numbers are
    * supported, but should be avoided.
@@ -190,10 +208,14 @@ public abstract class DataOutput {
    * @see org.apache.lucene.store.DataInput#readVInt()
    */
   public final void writeVInt(int i) throws IOException {
+	// i & ~0x7F, 不管最后的7位, 看是否有值
     while ((i & ~0x7F) != 0) {
+      // 如果有值的话, 先写入低7位, 并把第8位置为1
       writeByte((byte)((i & 0x7F) | 0x80));
+      // 右移7位
       i >>>= 7;
     }
+    // 写入
     writeByte((byte)i);
   }
 
@@ -202,6 +224,8 @@ public abstract class DataOutput {
    * 64-bit unsigned integer written as eight bytes, high-order bytes first.
    * 
    * @see org.apache.lucene.store.DataInput#readLong()
+   * 
+   * 写入1个long, 分成两个int写入, 高位在前
    */
   public void writeLong(long i) throws IOException {
     writeInt((int) (i >> 32));
@@ -230,11 +254,18 @@ public abstract class DataOutput {
    * written as a {@link #writeVInt VInt}, followed by the bytes.
    * 
    * @see org.apache.lucene.store.DataInput#readString()
+   * 
+   * 写入一个String
+   * 以UTF-8编码写入字符串. 首先写入是一个vint类型的字符串长度, 
+   * 再写入字符串的内容.
    */
   public void writeString(String s) throws IOException {
+	// 把String转换成UTF-8编码的byte[]
     final BytesRef utf8Result = new BytesRef(10);
     UnicodeUtil.UTF16toUTF8(s, 0, s.length(), utf8Result);
+    // 写入数组长度
     writeVInt(utf8Result.length);
+    // 写入字符串转换出来的byte[]
     writeBytes(utf8Result.bytes, 0, utf8Result.length);
   }
 
@@ -272,6 +303,8 @@ public abstract class DataOutput {
    * followed by each key-value pair written as two consecutive 
    * {@link #writeString(String) String}s.
    * 
+   * 写入一个String map
+   * 先写一个int类型的长度, 再写入key-value对
    * @param map Input map. May be null (equivalent to an empty map)
    */
   public void writeStringStringMap(Map<String,String> map) throws IOException {
@@ -294,6 +327,8 @@ public abstract class DataOutput {
    * {@link #writeString(String) String}.
    * 
    * @param set Input set. May be null (equivalent to an empty set)
+   * 
+   * 先写一个int类型的长度, 再写入值
    */
   public void writeStringSet(Set<String> set) throws IOException {
     if (set == null) {

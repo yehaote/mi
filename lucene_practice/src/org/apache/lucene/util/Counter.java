@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Simple counter class
- * 
+ * 简单的计算器(抽象类)
  * @lucene.internal
  * @lucene.experimental
  */
@@ -45,6 +45,7 @@ public abstract class Counter {
 
   /**
    * Returns a new counter. The returned counter is not thread-safe.
+   * 返回一个计算器, 不是线程安全的
    */
   public static Counter newCounter() {
     return newCounter(false);
@@ -61,7 +62,8 @@ public abstract class Counter {
   public static Counter newCounter(boolean threadSafe) {
     return threadSafe ? new AtomicCounter() : new SerialCounter();
   }
-
+  
+  // 非线程安全的计数器
   private final static class SerialCounter extends Counter {
     private long count = 0;
 
