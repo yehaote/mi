@@ -1482,11 +1482,18 @@ public class IndexWriter implements Closeable, TwoPhaseCommit {
    * href="#OOME">above</a> for details.</p>
    *
    * @param term the term to identify the document(s) to be
-   * deleted
-   * @param doc the document to be added
-   * @param analyzer the analyzer to use when analyzing the document
-   * @throws CorruptIndexException if the index is corrupt
-   * @throws java.io.IOException if there is a low-level IO error
+   * deleted 需要被删除的term
+   * @param doc the document to be added 需要被添加的document
+   * @param analyzer the analyzer to use when analyzing the document 分词器
+   * @throws CorruptIndexException if the index is corrupt 被打断的异常
+   * @throws java.io.IOException if there is a low-level IO error 低等级的IO异常
+   * 
+   * 更新一个文档, 首先根据term删除文档, 然后添加新的文档.
+   * 对于索引的reader来说, 这个删除然后新增的操作是原子的(刷新只有在新增以后才会调用).
+   * 
+   * 注意: 如果这个方法导致OutOfMemoryError的话, 你需要马上关闭这个writer.
+   * 并且马上查看OOME的详细信息.
+   * 
    */
   public void updateDocument(Term term, Iterable<? extends IndexableField> doc, Analyzer analyzer)
       throws IOException {
@@ -1495,6 +1502,7 @@ public class IndexWriter implements Closeable, TwoPhaseCommit {
       boolean success = false;
       boolean anySegmentFlushed = false;
       try {
+    	// 通过docWriter进行写入
         anySegmentFlushed = docWriter.updateDocument(doc, analyzer, term);
         success = true;
       } finally {

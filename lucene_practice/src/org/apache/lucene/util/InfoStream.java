@@ -28,6 +28,8 @@ import java.io.Closeable;
  * NOTE: Enabling infostreams may cause performance degradation
  * in some components.
  * 
+ * lucene类调试的API, 比如IndexWriter和SegmentInfos.
+ * 注意: 启用infostream可能会导致一些组件性能退化.
  * @lucene.internal 
  */
 public abstract class InfoStream implements Closeable, Cloneable {

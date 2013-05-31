@@ -41,6 +41,8 @@ import org.apache.lucene.util.MutableBits;
 /**
  * This class accepts multiple added documents and directly
  * writes segment files.
+ * 
+ * 这个类接收多个添加的文档并且直接写入segment file.
  *
  * Each added document is passed to the {@link org.apache.lucene.index.DocConsumer},
  * which in turn processes the document and interacts with
@@ -50,16 +52,29 @@ import org.apache.lucene.util.MutableBits;
  * immediately write bytes to the "doc store" files (ie,
  * they do not consume RAM per document, except while they
  * are processing the document).
+ * 
+ * 每添加一个文档, 都被传给DocConsumer, DocConsumer轮流处理document
+ * 并且跟其他的consumer通过indexing chain(索引处理链)交互.
+ * 特定的consumer, 像StoredFieldsConsumer和TermVectorsConsumer,
+ * 消化一个文档然后直接把byte数据写入到指定的"doc store"(文档存储)文件
+ * (即: 它们不消耗RAM每个文档, 除非当他们在处理文档的时候).
  *
  * Other consumers, eg {@link FreqProxTermsWriter} and
  * {@link org.apache.lucene.index.NormsConsumer}, buffer bytes in RAM and flush only
  * when a new segment is produced.
-
+ * 
+ * 其它的consumer, 比如FreqProxTermsWriter和NormsConsumer,
+ * 缓存byte在内存中, 当一个新的segment被创建的时候才会刷新输出.
+ * 
  * Once we have used our allowed RAM buffer, or the number
  * of added docs is large enough (in the case we are
  * flushing by doc count instead of RAM usage), we create a
  * real segment and flush it to the Directory.
  *
+ * 当我们需要使用我们允许的RAM buffer, 或者添加的文档数已经足够多
+ * (在这样的情况下, 我们根据文档数刷新输出代替内存的使用量),
+ * 我们创建一个真实的segment然后刷新输出到Directory.
+ * 
  * Threads:
  *
  * Multiple threads are allowed into addDocument at once.
@@ -73,13 +88,22 @@ import org.apache.lucene.util.MutableBits;
  * synchronization (most of the "heavy lifting" is in this
  * call).  Finally the synchronized "finishDocument" is
  * called to flush changes to the directory.
- *
+ * 
+ * 允许多线程同时添加文档. 这里有一个初始的同步的调用getThreadState, 
+ * 给当前的线程分配一个ThreadState. 相同的线程总是获得相同的ThreadState(线程关联),
+ * 因此这里是一致的模式(比如: 每个线程为不同的内容建立索引).
+ * 然后调用processDocument在那个ThreadState上而不用同步(最繁重是这个调用).
+ * 最后调用同步的finishDocument, 把这些更改刷新输出到directory.
+ * 
+ * 
  * When flush is called by IndexWriter we forcefully idle
  * all threads and flush only once they are all idle.  This
  * means you can call flush with a given thread even while
  * other threads are actively adding/deleting documents.
  *
- *
+ * 当flush被IndexWriter调用的时候, 我们强制闲置所有的线程并且只有在他们都闲置的时候才刷新输出.
+ * 这意味着你可以在其他线程还在添加/删除文档的同时, 刷新输出线程.
+ * 
  * Exceptions:
  *
  * Because this class directly updates in-memory posting
@@ -92,7 +116,14 @@ import org.apache.lucene.util.MutableBits;
  * can corrupt that posting list.  We call such exceptions
  * "aborting exceptions".  In these cases we must call
  * abort() to discard all docs added since the last flush.
- *
+ * 
+ * 因为这个类直接更新内存中的posting list, 并且直接刷新输出stored field和
+ * term vectors到directory的文件中, 这里会有一定的限制时间发生一个异常的时候会让当前的state出错.
+ * 比如, 当刷新输出stored field的时候磁盘满了, 会让那个文件在一个不正确的状态.
+ * 或者当往内存的posting list中添加数据的时候发生OOM, 会让这个posting list出错.
+ * 我们称这样的异常为"中止异常"(在一个不完全的状态下停下来了).
+ * 碰到这样的情况, 我们必须调用abort()方法把从上一次刷新输出以后的数据丢弃.
+ * 
  * All other exceptions ("non-aborting exceptions") can
  * still partially update the index structures.  These
  * updates are consistent, but, they represent only a part
@@ -100,21 +131,26 @@ import org.apache.lucene.util.MutableBits;
  * When this happens, we immediately mark the document as
  * deleted so that the document is always atomically ("all
  * or none") added to the index.
+ * 
+ * 其他的异常(非中止异常)还是可以继续更新部分的索引结构.
+ * 这个更新是一致的, 不过他们只是表现了一部分的文档直到异常被解决.
+ * 当这样的情况发生的时候, 我们马上标记这个文档为删除状态, 
+ * 因此文档被添加到索引当中都是原子的("所有"或者"没有").
  */
 
 final class DocumentsWriter {
-  Directory directory;
+  Directory directory; // 对directory的引用
 
-  private volatile boolean closed;
+  private volatile boolean closed; // 是否被关闭
 
-  final InfoStream infoStream;
+  final InfoStream infoStream; // 
   Similarity similarity;
 
   List<String> newFiles;
 
   final IndexWriter indexWriter;
 
-  private AtomicInteger numDocsInRAM = new AtomicInteger(0);
+  private AtomicInteger numDocsInRAM = new AtomicInteger(0); // 记录在内存中的文档数
 
   // TODO: cut over to BytesRefHash in BufferedDeletes
   volatile DocumentsWriterDeleteQueue deleteQueue = new DocumentsWriterDeleteQueue();
