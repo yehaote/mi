@@ -22,12 +22,13 @@ import java.io.EOFException;
 
 /** A memory-resident {@link org.apache.lucene.store.IndexInput} implementation.
  *  
+ *  常驻内存的IndexInput实现(输入).
  *  @lucene.internal */
 public class RAMInputStream extends IndexInput implements Cloneable {
-  static final int BUFFER_SIZE = RAMOutputStream.BUFFER_SIZE;
+  static final int BUFFER_SIZE = RAMOutputStream.BUFFER_SIZE; //跟输出流的bufferSIZE保持一致 
 
   private RAMFile file;
-  private long length;
+  private long length; // 使用file.length()做为输入的长度
 
   private byte[] currentBuffer;
   private int currentBufferIndex;
@@ -35,7 +36,7 @@ public class RAMInputStream extends IndexInput implements Cloneable {
   private int bufferPosition;
   private long bufferStart;
   private int bufferLength;
-
+  
   public RAMInputStream(String name, RAMFile f) throws IOException {
     super("RAMInputStream(name=" + name + ")");
     file = f;
@@ -46,6 +47,7 @@ public class RAMInputStream extends IndexInput implements Cloneable {
 
     // make sure that we switch to the
     // first needed buffer lazily
+    // 懒加载切换到地一个buffer
     currentBufferIndex = -1;
     currentBuffer = null;
   }
@@ -62,6 +64,7 @@ public class RAMInputStream extends IndexInput implements Cloneable {
 
   @Override
   public byte readByte() throws IOException {
+	// 读取一个byte, 如果当前已经是buffer的最后一位的话, 切换buffer
     if (bufferPosition >= bufferLength) {
       currentBufferIndex++;
       switchCurrentBuffer(true);
@@ -71,6 +74,7 @@ public class RAMInputStream extends IndexInput implements Cloneable {
 
   @Override
   public void readBytes(byte[] b, int offset, int len) throws IOException {
+	// 读取数据存入b
     while (len > 0) {
       if (bufferPosition >= bufferLength) {
         currentBufferIndex++;
@@ -85,19 +89,30 @@ public class RAMInputStream extends IndexInput implements Cloneable {
       bufferPosition += bytesToCopy;
     }
   }
-
+  
+  /**
+   * 切换当前的buffer
+   * @param enforceEOF 
+   * @throws IOException
+   */
   private final void switchCurrentBuffer(boolean enforceEOF) throws IOException {
+	// 切换bufferStart到指定的currentBufferIndex的buffer
     bufferStart = (long) BUFFER_SIZE * (long) currentBufferIndex;
+    // 是否已经没有buffer了
     if (currentBufferIndex >= file.numBuffers()) {
       // end of file reached, no more buffers left
+      // 已经到文件末尾, 没有更多的buffer了
+      // 如果指定了enforceEOF的话, 抛出EOFException
       if (enforceEOF) {
         throw new EOFException("read past EOF: " + this);
       } else {
         // Force EOF if a read takes place at this position
+    	// 指定到文件末尾
         currentBufferIndex--;
         bufferPosition = BUFFER_SIZE;
       }
     } else {
+      // 如果合法的话, 进行切换
       currentBuffer = file.getBuffer(currentBufferIndex);
       bufferPosition = 0;
       long buflen = length - bufferStart;
@@ -112,7 +127,9 @@ public class RAMInputStream extends IndexInput implements Cloneable {
 
   @Override
   public void seek(long pos) throws IOException {
+	// seek到特定的位置
     if (currentBuffer==null || pos < bufferStart || pos >= bufferStart + BUFFER_SIZE) {
+      // 如果当前buffer没有引用, 或者pos的位置不在当前buffer中, 进行buffer切换
       currentBufferIndex = (int) (pos / BUFFER_SIZE);
       switchCurrentBuffer(false);
     }

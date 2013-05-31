@@ -49,12 +49,17 @@ class DocumentsWriterPerThread {
    * The IndexingChain must define the {@link #getChain(org.apache.lucene.index.DocumentsWriterPerThread)} method
    * which returns the DocConsumer that the DocumentsWriter calls to process the
    * documents.
+   * 
+   * IndexingChain必须实现getChain()方法, 返回一个DocConsumer用来处理文档
    */
   abstract static class IndexingChain {
     abstract DocConsumer getChain(DocumentsWriterPerThread documentsWriterPerThread);
   }
   
-
+  
+  /**
+   * IndexingChain的一个内部实现
+   */
   static final IndexingChain defaultIndexingChain = new IndexingChain() {
 
     @Override
@@ -253,6 +258,7 @@ class DocumentsWriterPerThread {
     boolean success = false;
     try {
       try {
+    	// 处理field的信息? 这个传入的doc怎么获取field的信息呢?
         consumer.processDocument(fieldInfos);
       } finally {
         docState.clear();

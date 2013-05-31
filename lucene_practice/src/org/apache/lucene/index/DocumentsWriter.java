@@ -354,7 +354,15 @@ final class DocumentsWriter {
 
     return postUpdate(flushingDWPT, maybeMerge);
   }
-
+  
+  /**
+   * 更新Document
+   * @param doc 写入的doc
+   * @param analyzer 分词器
+   * @param delTerm 删除的Term
+   * @return
+   * @throws IOException
+   */
   boolean updateDocument(final Iterable<? extends IndexableField> doc, final Analyzer analyzer,
       final Term delTerm) throws IOException {
 

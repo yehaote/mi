@@ -53,7 +53,7 @@ import static org.apache.lucene.util.RamUsageEstimator.NUM_BYTES_OBJECT_REF;
 public final class ByteBlockPool {
   public final static int BYTE_BLOCK_SHIFT = 15;
   public final static int BYTE_BLOCK_SIZE = 1 << BYTE_BLOCK_SHIFT; // 约等于32m?
-  public final static int BYTE_BLOCK_MASK = BYTE_BLOCK_SIZE - 1;
+  public final static int BYTE_BLOCK_MASK = BYTE_BLOCK_SIZE - 1; // 掩码, 可以根据当前的offset获取在当前block中的位置
 
   /** Abstract class for allocating and freeing byte
    *  blocks. 
@@ -263,30 +263,43 @@ public final class ByteBlockPool {
    * 调用rest()方法的话会让pool直接前进到第一个buffer.
    */
   public void nextBuffer() {
-	// 如果bufferUpto+1 == buffers.length的话, 说明在pool中还有空余的buffer
+	// 如果bufferUpto+1 == buffers.length的话, 说明在pool中所有的buffer都已经满了
     if (1+bufferUpto == buffers.length) {
+      // 重新分配一个更大的pool
       byte[][] newBuffers = new byte[ArrayUtil.oversize(buffers.length+1,
                                                         NUM_BYTES_OBJECT_REF)][];
+      // 把原先pool里的数据拷贝过去
       System.arraycopy(buffers, 0, newBuffers, 0, buffers.length);
+      // 切换引用
       buffers = newBuffers;
     }
+    // pool中前进一格, 并获取一个新的block
     buffer = buffers[1+bufferUpto] = allocator.getByteBlock();
     bufferUpto++;
 
-    byteUpto = 0;
-    byteOffset += BYTE_BLOCK_SIZE;
+    byteUpto = 0; // 当前块的开始?
+    byteOffset += BYTE_BLOCK_SIZE; // offSet也指向当前块
   }
   
   /**
    * Allocates a new slice with the given size. 
    * @see org.apache.lucene.util.ByteBlockPool#FIRST_LEVEL_SIZE
+   * 
+   * 获取一个新的分片, 根据指定的大小
    */
   public int newSlice(final int size) {
+	// 看当前块是否还有足够的空间
+	// (块大小-当前需求大小) = 当前块最大的position, 如果byteUpto比这个还大的话, 说明分配不下了
     if (byteUpto > BYTE_BLOCK_SIZE-size)
+      // 如果没有的话, 去下一个buffer里面去取
       nextBuffer();
+    // 记录当前Slice开始的位置
     final int upto = byteUpto;
+    // byteUpto指向当前块结束的地方
     byteUpto += size;
+    // 当前块的最后一位设置为16? 这里就是所谓的设置为非0, 类头上
     buffer[byteUpto-1] = 16;
+    // 返回块开始的地方
     return upto;
   }
 
@@ -295,7 +308,12 @@ public final class ByteBlockPool {
   // is just a compact way to encode X+1 with a max.  Second
   // array is the length of each slice, ie first slice is 5
   // bytes, next slice is 14 bytes, etc.
-  
+  // 
+  // 每块的大小. 这些数组最多16个元素(索引被编码成4个bit).
+  // 第一个数组包含x+1, 然后指定一个最大值, 用index指定为下一个值
+  // 常见用法, nextLevel = NEXT_LEVEL_ARRAY[level];
+  // 第二个数组包含每个等级的分片的大小, 比如第一个分片为5, 下一个为14.
+  // 常见用法 level_size = LEVEL_SIZE_ARRAY[level];
   /**
    * An array holding the offset into the {@link org.apache.lucene.util.ByteBlockPool#LEVEL_SIZE_ARRAY}
    * to quickly navigate to the next slice level.
@@ -310,43 +328,54 @@ public final class ByteBlockPool {
   /**
    * The first level size for new slices
    * @see org.apache.lucene.util.ByteBlockPool#newSlice(int)
+   * 
+   * 第一个等级的分片大小
    */
   public final static int FIRST_LEVEL_SIZE = LEVEL_SIZE_ARRAY[0];
 
   /**
    * Creates a new byte slice with the given starting size and 
    * returns the slices offset in the pool.
+   * 
+   * 创建一个新的分片, 根据指定的开始位置, 并返回分配分配在pool中的offset
    */
   public int allocSlice(final byte[] slice, final int upto) {
-
+	// 这样来获取分片等级?
     final int level = slice[upto] & 15;
+    // 获取新的分片大小
     final int newLevel = NEXT_LEVEL_ARRAY[level];
     final int newSize = LEVEL_SIZE_ARRAY[newLevel];
-
+    
+    // 看看是不是需要分配一个新的块用来存储这个分片
     // Maybe allocate another block
     if (byteUpto > BYTE_BLOCK_SIZE-newSize) {
       nextBuffer();
     }
-
+    
+    // 记录当前块开始的位置
     final int newUpto = byteUpto;
+    // 记录当前的offset为
     final int offset = newUpto + byteOffset;
     byteUpto += newSize;
-
+    
+    // 拷贝最后3个byte到下一个分片的位置
     // Copy forward the past 3 bytes (which we are about
     // to overwrite with the forwarding address):
     buffer[newUpto] = slice[upto-3];
     buffer[newUpto+1] = slice[upto-2];
     buffer[newUpto+2] = slice[upto-1];
-
+    
+    // 把下一个分片的地址信息写入到前一个分片当中
     // Write forwarding address at end of last slice:
     slice[upto-3] = (byte) (offset >>> 24);
     slice[upto-2] = (byte) (offset >>> 16);
     slice[upto-1] = (byte) (offset >>> 8);
     slice[upto] = (byte) offset;
         
+    // 把新的分片的level信息写入到分片中去
     // Write new level:
     buffer[byteUpto-1] = (byte) (16|newLevel);
-
+    
     return newUpto+3;
   }
 
@@ -370,27 +399,41 @@ public final class ByteBlockPool {
   /**
    * Appends the bytes in the provided {@link org.apache.lucene.util.BytesRef} at
    * the current position.
+   * 
+   * 在当前位置添加BytesRef
    */
   public void append(final BytesRef bytes) {
+	// 获取当前BytesRef的长度
     int length = bytes.length;
     if (length == 0) {
       return;
     }
+    // 获取当前bytes的offset
     int offset = bytes.offset;
+    // 查看是否溢出 (byteUpto(当前的位置)+length(长度))-当前的块大小
     int overflow = (length + byteUpto) - BYTE_BLOCK_SIZE;
     do {
-      if (overflow <= 0) { 
+      // 如果<=0的话, 说明当前块还放得下
+      if (overflow <= 0) {
+    	// 直接拷贝到当前的块下
         System.arraycopy(bytes.bytes, offset, buffer, byteUpto, length);
         byteUpto += length;
         break;
       } else {
+    	// 如果>0的话, 说明当前块放不下
+    	// 获取当前块还可以存得下多少数据
         final int bytesToCopy = length-overflow;
+        // 拷贝这些拷得下的数据
         if (bytesToCopy > 0) {
           System.arraycopy(bytes.bytes, offset, buffer, byteUpto, bytesToCopy);
+          // offset前移
           offset += bytesToCopy;
+          // length减去当前已经拷贝过去的东西
           length -= bytesToCopy;
         }
+        // 获取到下一个buffer
         nextBuffer();
+        // 计算overflow为新的overflow
         overflow = overflow - BYTE_BLOCK_SIZE;
       }
     }  while(true);
@@ -400,17 +443,22 @@ public final class ByteBlockPool {
    * Reads bytes bytes out of the pool starting at the given offset with the given  
    * length into the given byte array at offset <tt>off</tt>.
    * <p>Note: this method allows to copy across block boundaries.</p>
+   * 
+   * 从buffer读取数据, 从offset开始, 读取到bytes[]中.
+   * 注意: 这个方法允许拷贝的时候跨越块的边界.
    */
   public void readBytes(final long offset, final byte bytes[], final int off, final int length) {
     if (length == 0) {
       return;
     }
-    int bytesOffset = off;
-    int bytesLength = length;
-    int bufferIndex = (int) (offset >> BYTE_BLOCK_SHIFT);
-    byte[] buffer = buffers[bufferIndex];
-    int pos = (int) (offset & BYTE_BLOCK_MASK);
-    int overflow = (pos + length) - BYTE_BLOCK_SIZE;
+    int bytesOffset = off; // offset 
+    int bytesLength = length; // 长度
+    
+    int bufferIndex = (int) (offset >> BYTE_BLOCK_SHIFT); // 根据offset计算当前数据在哪个buffer
+    byte[] buffer = buffers[bufferIndex]; // 定位到对应的buffer
+    
+    int pos = (int) (offset & BYTE_BLOCK_MASK); // 根据offset获取对应的位置信息
+    int overflow = (pos + length) - BYTE_BLOCK_SIZE; // pos + length查看是否在当前block之外
     do {
       if (overflow <= 0) {
         System.arraycopy(buffer, pos, bytes, bytesOffset, bytesLength);

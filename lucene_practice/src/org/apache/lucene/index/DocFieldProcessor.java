@@ -36,6 +36,9 @@ import org.apache.lucene.util.Counter;
  * by field.  This class doesn't doesn't do any "real" work
  * of its own: it just forwards the fields to a
  * DocFieldConsumer.
+ * 
+ * 按照相同名称采集所有的fields, 然后调用per-field consumers去逐个处理这些field.
+ * 这个类实际不会做"真正"的工作, 只是负责把fields传给DocFieldConsumer
  */
 
 final class DocFieldProcessor extends DocConsumer {

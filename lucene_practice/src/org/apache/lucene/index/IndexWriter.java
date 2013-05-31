@@ -58,6 +58,8 @@ import org.apache.lucene.util.ThreadInterruptedException;
 
 /**
   An <code>IndexWriter</code> creates and maintains an index.
+  
+  一个IndexWriter创建和维护一个索引.
 
   <p>The {@link OpenMode} option on 
   {@link IndexWriterConfig#setOpenMode(OpenMode)} determines 
@@ -70,6 +72,13 @@ import org.apache.lucene.util.ThreadInterruptedException;
   new index if there is not already an index at the provided path
   and otherwise open the existing index.</p>
 
+  OpenMode决定了一个新的索引是创建, 还是打开一个已经存在的索引.
+  注意: 你可以使用OpenMode.CREATE打开一个索引, 即使有很多readers在读取这个索引.
+  老的readers还是可以继续根据它们打开索引时候的快照进行搜索, 
+  新创建的index对于它们来说是不可见的, 知道它们调用re-open.
+  如果使用OpenMode.CREATE_OR_APPEDN打开, 如果没有索引的话会直接创建, 
+  如果有索引的话会直接打开.
+
   <p>In either case, documents are added with {@link #addDocument(Iterable)
   addDocument} and removed with {@link #deleteDocuments(org.apache.lucene.index.Term)} or {@link
   #deleteDocuments(Query)}. A document can be updated with {@link
@@ -77,6 +86,10 @@ import org.apache.lucene.util.ThreadInterruptedException;
   and then adds the entire document). When finished adding, deleting 
   and updating documents, {@link #close() close} should be called.</p>
 
+  无论使用哪种情况, 文档使用addDocument()添加, 使用deleteDocuments()删除.
+  一个文档可以是用updateDocument()来进行更新, 但是这个更新实际上只是删除老的文档然后再添加一个新的.
+  当完成添加, 删除, 更新文档以后, 要调用close().
+  
   <a name="flush"></a>
   <p>These changes are buffered in memory and periodically
   flushed to the {@link Directory} (during the above method

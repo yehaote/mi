@@ -32,11 +32,11 @@ import org.apache.lucene.util.ByteBlockPool;
 
 final class ByteSliceWriter extends DataOutput {
 
-  private byte[] slice;
-  private int upto;
+  private byte[] slice; //当前的分片
+  private int upto; // 在slice中的offset
   private final ByteBlockPool pool;
 
-  int offset0; // 什么用?
+  int offset0; // 原始的address, 整块的offset, 而不是当前块的
 
   public ByteSliceWriter(ByteBlockPool pool) {
     this.pool = pool;
@@ -52,23 +52,30 @@ final class ByteSliceWriter extends DataOutput {
     slice = pool.buffers[address >> ByteBlockPool.BYTE_BLOCK_SHIFT];
     // 判断分片不为空
     assert slice != null;
-    // 取掩码?
+    // 取掩码, 根据address获取在当前slice中的位置
     upto = address & ByteBlockPool.BYTE_BLOCK_MASK;
-    // 
+    // offset0记录原始的address
     offset0 = address;
     assert upto < slice.length;
   }
 
-  /** Write byte into byte slice stream */
+  /** Write byte into byte slice stream 
+   *  写入一个byte
+   * */
   @Override
   public void writeByte(byte b) {
+	// 如果当前的分片不是null
     assert slice != null;
+    // 如果当前的那位不是零的话, 说明是块结束符?
     if (slice[upto] != 0) {
+      // 重新分配块
       upto = pool.allocSlice(slice, upto);
+      // 切换块
       slice = pool.buffer;
       offset0 = pool.byteOffset;
       assert slice != null;
     }
+    // 写入数据 
     slice[upto++] = b;
     assert upto != slice.length;
   }

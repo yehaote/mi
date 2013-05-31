@@ -20,12 +20,19 @@ package org.apache.lucene.index;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * Document Field 的消费者
+ */
 abstract class DocFieldConsumer {
   /** Called when DocumentsWriterPerThread decides to create a new
-   *  segment */
+   *  segment 
+   *  当DocumentsWriterPerThread决定产生一个新的segment的时候调用这个方法
+   *  */
   abstract void flush(Map<String, DocFieldConsumerPerField> fieldsToFlush, SegmentWriteState state) throws IOException;
 
-  /** Called when an aborting exception is hit */
+  /** Called when an aborting exception is hit 
+   *  当一个忽略的异常碰到的时候调用   
+   * */
   abstract void abort();
 
   abstract void startDocument() throws IOException;

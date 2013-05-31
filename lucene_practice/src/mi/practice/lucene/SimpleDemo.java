@@ -10,9 +10,11 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
+import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.lucene.util.Version;
 
+import java.io.File;
 import java.io.IOException;
 
 /**
@@ -30,10 +32,11 @@ public class SimpleDemo {
         Field field = new StringField("name", "value", Field.Store.NO);
         document.add(field);
         // 创建一个目录, 用于存放索引
-        Directory directory = new RAMDirectory();
+        Directory directory = FSDirectory.open(new File("/home/waf/tmp/index"));
+        //Directory directory = new RAMDirectory();
         // 定义索引写入器的一些参数
         Analyzer analyzer = new StandardAnalyzer(version);
-        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(version, new StandardAnalyzer(version));
+        IndexWriterConfig indexWriterConfig = new IndexWriterConfig(version, analyzer);
         // 初始化索引写入器, 并把文档写入到索引中去
         IndexWriter indexWriter = new IndexWriter(directory, indexWriterConfig);
         indexWriter.addDocument(document);
@@ -44,5 +47,6 @@ public class SimpleDemo {
         IndexSearcher indexSearcher = new IndexSearcher(reader);
         TopDocs result = indexSearcher.search(new TermQuery(new Term("name", "value")), 10);
         System.out.println(result.totalHits);
+        reader.close();
     }
 }

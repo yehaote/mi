@@ -150,14 +150,21 @@ public final class ArrayUtil {
    * @param minTargetSize Minimum required value to be returned.
    * @param bytesPerElement Bytes used by each element of
    * the array.  See constants in {@link RamUsageEstimator}.
+   * 指定每个元素占用几个byte?
+   * 
    *
    * @lucene.internal
+   * 
+   * 返回一个数组大小 大于等于 minTargetSize, 通常用于分配增长的数组?
+   * 
+   *  注意: 这个是从Python2.4.2 里借过来的.
    */
 
   public static int oversize(int minTargetSize, int bytesPerElement) {
 
+	// 验证参数是否正确
     if (minTargetSize < 0) {
-      // catch usage that accidentally overflows int
+      // catch usage that accidentally overflows intoversize
       throw new IllegalArgumentException("invalid array size " + minTargetSize);
     }
 
@@ -165,7 +172,8 @@ public final class ArrayUtil {
       // wait until at least one element is requested
       return 0;
     }
-
+    
+    // 计算额外可以分配的?
     // asymptotic exponential growth by 1/8th, favors
     // spending a bit more CPU to not tie up too much wasted
     // RAM:
@@ -175,29 +183,33 @@ public final class ArrayUtil {
       // for very small arrays, where constant overhead of
       // realloc is presumably relatively high, we grow
       // faster
+      // 如果是很小的数组的话, 让额外的开销等于3
       extra = 3;
     }
+    
 
     int newSize = minTargetSize + extra;
-
+    
     // add 7 to allow for worst case byte alignment addition below:
+    // 最多的分配情况会比newSize再多出7 , 先做个越界判断
     if (newSize+7 < 0) {
       // int overflowed -- return max allowed array size
       return Integer.MAX_VALUE;
     }
 
     if (Constants.JRE_IS_64BIT) {
+      // 判断是不是64位的jvm
       // round up to 8 byte alignment in 64bit env
       switch(bytesPerElement) {
       case 4:
         // round up to multiple of 2
-        return (newSize + 1) & 0x7ffffffe;
+        return (newSize + 1) & 0x7ffffffe; // +1并把newSize转换成2的倍数
       case 2:
         // round up to multiple of 4
-        return (newSize + 3) & 0x7ffffffc;
+        return (newSize + 3) & 0x7ffffffc; // 同理4的倍数
       case 1:
         // round up to multiple of 8
-        return (newSize + 7) & 0x7ffffff8;
+        return (newSize + 7) & 0x7ffffff8; // 同理8的倍数
       case 8:
         // no rounding
       default:

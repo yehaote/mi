@@ -19,6 +19,9 @@ package org.apache.lucene.index;
 
 import java.io.IOException;
 
+/**
+ * 
+ */
 abstract class DocFieldConsumerPerField {
   /** Processes all occurrences of a single field */
   abstract void processFields(IndexableField[] fields, int count) throws IOException;
