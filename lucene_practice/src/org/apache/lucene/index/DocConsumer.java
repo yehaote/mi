@@ -23,9 +23,33 @@ import java.io.IOException;
  * 文档消费者 
  */
 abstract class DocConsumer {
+  /**
+   * 处理文档
+   * @param fieldInfos
+   * @throws IOException
+   */
   abstract void processDocument(FieldInfos.Builder fieldInfos) throws IOException;
-  abstract void finishDocument() throws IOException;
+  
+  /**
+   * 完成处理文档
+   * @throws IOException
+   */
+  abstract void finishDocument() throws IOException; 
+  
+  /**
+   * 刷新缓存输出 
+   * @param state
+   * @throws IOException
+   */
   abstract void flush(final SegmentWriteState state) throws IOException;
+  
+  /**
+   * 中止
+   */
   abstract void abort();
+  
+  /**
+   * 在刷新缓存输出以后做的工作
+   */
   abstract void doAfterFlush();
 }

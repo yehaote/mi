@@ -20,6 +20,9 @@ package org.apache.lucene.index;
 import java.io.IOException;
 import java.util.Map;
 
+/**
+ * 
+ */
 abstract class TermsHashConsumer {
   abstract void flush(Map<String, TermsHashConsumerPerField> fieldsToFlush, final SegmentWriteState state) throws IOException;
   abstract void abort();

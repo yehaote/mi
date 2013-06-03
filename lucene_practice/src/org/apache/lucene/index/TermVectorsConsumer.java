@@ -30,8 +30,8 @@ import org.apache.lucene.util.RamUsageEstimator;
 
 final class TermVectorsConsumer extends TermsHashConsumer {
 
-  TermVectorsWriter writer;
-  final DocumentsWriterPerThread docWriter;
+  TermVectorsWriter writer; 
+  final DocumentsWriterPerThread docWriter; // 引用调用它的DocumentsWriterPerThread
   int freeCount;
   int lastDocID;
 

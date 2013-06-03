@@ -43,15 +43,17 @@ import org.apache.lucene.util.Counter;
 
 final class DocFieldProcessor extends DocConsumer {
 
-  final DocFieldConsumer consumer;
-  final StoredFieldsConsumer storedConsumer;
-  final Codec codec;
+  final DocFieldConsumer consumer; //Field的consumer?
+  final StoredFieldsConsumer storedConsumer; // 储存的field的consumer?
+  final Codec codec; // 编码方式
 
   // Holds all fields seen in current doc
+  // 用于存储当前文档中的fields
   DocFieldProcessorPerField[] fields = new DocFieldProcessorPerField[1];
   int fieldCount;
 
   // Hash table for all fields ever seen
+  // 用于存储所有见过的field的Hash表
   DocFieldProcessorPerField[] fieldHash = new DocFieldProcessorPerField[2];
   int hashMask = 1;
   int totalFieldCount;
@@ -178,7 +180,10 @@ final class DocFieldProcessor extends DocConsumer {
     fieldHash = newHashArray;
     hashMask = newHashMask;
   }
-
+  
+  /**
+   * DocumentsWriterPerThread调用这个方法用于处理文档更新
+   */
   @Override
   public void processDocument(FieldInfos.Builder fieldInfos) throws IOException {
 

@@ -28,8 +28,8 @@ import org.apache.lucene.util.RamUsageEstimator;
 /** This is a StoredFieldsConsumer that writes stored fields. */
 final class StoredFieldsProcessor extends StoredFieldsConsumer {
 
-  StoredFieldsWriter fieldsWriter;
-  final DocumentsWriterPerThread docWriter;
+  StoredFieldsWriter fieldsWriter; // 输出到I/O写入器
+  final DocumentsWriterPerThread docWriter; // 对调用它的docWriter的引用
   int lastDocID;
 
   int freeCount;
@@ -43,10 +43,13 @@ final class StoredFieldsProcessor extends StoredFieldsConsumer {
     this.codec = docWriter.codec;
   }
 
-  private int numStoredFields;
-  private IndexableField[] storedFields;
-  private FieldInfo[] fieldInfos;
-
+  private int numStoredFields; // 当前记录的StoreField数
+  private IndexableField[] storedFields; // 用于存储需要Store的Fields
+  private FieldInfo[] fieldInfos; // 用于存储对应StoreField的FieldInfo信息
+  
+  /**
+   * 重新初始化
+   */
   public void reset() {
     numStoredFields = 0;
     storedFields = new IndexableField[1];
@@ -55,21 +58,27 @@ final class StoredFieldsProcessor extends StoredFieldsConsumer {
   
   @Override
   public void startDocument() {
+	// 每一个开始一个新文档的时候都reset
     reset();
   }
 
   @Override
   public void flush(SegmentWriteState state) throws IOException {
+	// 刷新输出 
+	// 获取当前段的docCount
     int numDocs = state.segmentInfo.getDocCount();
-
+    
     if (numDocs > 0) {
       // It's possible that all documents seen in this segment
       // hit non-aborting exceptions, in which case we will
       // not have yet init'd the FieldsWriter:
+      // 有可能在这个segment中的所有的document都碰到一个非中断的异常,
+      // 在这样的情况下我们还还没有初始化FieldsWriter.
       initFieldsWriter(state.context);
+      // 填充文档?
       fill(numDocs);
     }
-
+    
     if (fieldsWriter != null) {
       try {
         fieldsWriter.finish(state.fieldInfos, numDocs);
@@ -80,7 +89,12 @@ final class StoredFieldsProcessor extends StoredFieldsConsumer {
       }
     }
   }
-
+  
+  /**
+   * 初始化fieldsWriter
+   * @param context
+   * @throws IOException
+   */
   private synchronized void initFieldsWriter(IOContext context) throws IOException {
     if (fieldsWriter == null) {
       fieldsWriter = codec.storedFieldsFormat().fieldsWriter(docWriter.directory, docWriter.getSegmentInfo(), context);
@@ -101,10 +115,13 @@ final class StoredFieldsProcessor extends StoredFieldsConsumer {
     }
   }
 
-  /** Fills in any hole in the docIDs */
+  /** Fills in any hole in the docIDs
+   *   
+   * */
   void fill(int docID) throws IOException {
     // We must "catch up" for all docs before us
     // that had no stored fields:
+	// 我们必须补充上所有没有存储Field的文档
     while(lastDocID < docID) {
       fieldsWriter.startDocument(0);
       lastDocID++;
@@ -134,9 +151,13 @@ final class StoredFieldsProcessor extends StoredFieldsConsumer {
 
   @Override
   public void addField(int docID, IndexableField field, FieldInfo fieldInfo) {
+	// 如果该Field是可以存储的话
     if (field.fieldType().stored()) {
+      // 如果当前已经添加的Field满了, 则重新分配存储空间
       if (numStoredFields == storedFields.length) {
+    	// 计算需要分配的新的大小
         int newSize = ArrayUtil.oversize(numStoredFields + 1, RamUsageEstimator.NUM_BYTES_OBJECT_REF);
+        
         IndexableField[] newArray = new IndexableField[newSize];
         System.arraycopy(storedFields, 0, newArray, 0, numStoredFields);
         storedFields = newArray;

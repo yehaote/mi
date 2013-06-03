@@ -401,9 +401,9 @@ final class DocumentsWriter {
    */
   boolean updateDocument(final Iterable<? extends IndexableField> doc, final Analyzer analyzer,
       final Term delTerm) throws IOException {
-
+	// 
     boolean maybeMerge = preUpdate();
-
+    
     final ThreadState perThread = flushControl.obtainAndLock();
 
     final DocumentsWriterPerThread flushingDWPT;
@@ -414,9 +414,10 @@ final class DocumentsWriter {
         ensureOpen();
         throw new IllegalStateException("perThread is not active but we are still open");
       }
-       
+      // 
       final DocumentsWriterPerThread dwpt = perThread.dwpt;
       try {
+    	// 
         dwpt.updateDocument(doc, analyzer, delTerm); 
         numDocsInRAM.incrementAndGet();
       } finally {

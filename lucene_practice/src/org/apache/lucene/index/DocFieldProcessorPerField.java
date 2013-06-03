@@ -27,6 +27,7 @@ import org.apache.lucene.util.RamUsageEstimator;
 
 /**
  * Holds all per thread, per field state.
+ * 存储所有per thread, per field的状态.
  */
 
 final class DocFieldProcessorPerField {
@@ -38,8 +39,8 @@ final class DocFieldProcessorPerField {
   DocFieldProcessorPerField next;
   int lastGen = -1;
 
-  int fieldCount;
-  IndexableField[] fields = new IndexableField[1];
+  int fieldCount; // 记录当前有多少Field
+  IndexableField[] fields = new IndexableField[1]; // 用于记录field的数组
   private final Map<FieldInfo,String> dvFields = new HashMap<FieldInfo,String>();
 
   public DocFieldProcessorPerField(final DocFieldProcessor docFieldProcessor, final FieldInfo fieldInfo) {
@@ -47,7 +48,11 @@ final class DocFieldProcessorPerField {
     this.fieldInfo = fieldInfo;
     this.bytesUsed = docFieldProcessor.bytesUsed;
   }
-
+  
+  /**
+   * 添加一个Filed
+   * @param field
+   */
   public void addField(IndexableField field) {
     if (fieldCount == fields.length) {
       int newSize = ArrayUtil.oversize(fieldCount + 1, RamUsageEstimator.NUM_BYTES_OBJECT_REF);

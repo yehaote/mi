@@ -19,7 +19,18 @@ package org.apache.lucene.index;
 
 import java.io.IOException;
 
+/**
+ * 抽象类
+ * 存储Fields的消费者
+ */
 abstract class StoredFieldsConsumer {
+  /**
+   * 添加一个Field
+   * @param docID
+   * @param field
+   * @param fieldInfo
+   * @throws IOException
+   */
   abstract void addField(int docID, IndexableField field, FieldInfo fieldInfo) throws IOException;
   abstract void flush(SegmentWriteState state) throws IOException;
   abstract void abort() throws IOException;

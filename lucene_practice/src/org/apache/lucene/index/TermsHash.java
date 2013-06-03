@@ -33,14 +33,21 @@ import org.apache.lucene.util.IntBlockPool;
  *  this class, eg {@link FreqProxTermsWriter} and {@link
  *  TermVectorsConsumer}, write their own byte streams
  *  under each term.
+ *  
+ *  这个类实现InvertedDocConsumer, 接收每个Field被分词器解析出来的token.
+ *  它把这些token存储在一个hash table当中, 为每个token分配单独的byte stream.
+ *  这个类的消费者(FreqProxTermsWriter和TermVectorsConsumer), 
+ *  根据这些term写入到他们自己的stream.
  */
 final class TermsHash extends InvertedDocConsumer {
 
-  final TermsHashConsumer consumer;
-  final TermsHash nextTermsHash;
+  final TermsHashConsumer consumer; // (TermVectorsConsumer或者FreqProxTermsWriter)
+  // 链表结构(比如FreqProxTermsWriter后的next是TermVectorsConsumer, TermVectorsConsumer)
+  // 而TermVectorsConsumer的后面就没有了, 单向链表, 不是双向的
+  final TermsHash nextTermsHash; 
 
-  final IntBlockPool intPool;
-  final ByteBlockPool bytePool;
+  final IntBlockPool intPool; // 存储int的池
+  final ByteBlockPool bytePool; // 存储byte的池
   ByteBlockPool termBytePool;
   final Counter bytesUsed;
 

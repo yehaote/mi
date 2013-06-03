@@ -35,6 +35,8 @@ import org.apache.lucene.util.SetOnce;
  * is reusing the flushing {@link org.apache.lucene.index.DocumentsWriterPerThread}s ThreadState with a
  * new {@link org.apache.lucene.index.DocumentsWriterPerThread} instance.
  * </p>
+ * 
+ * DocumentsWriterPerThreadPool控制ThreadState实例
  */
 abstract class DocumentsWriterPerThreadPool implements Cloneable {
   
@@ -126,15 +128,25 @@ abstract class DocumentsWriterPerThreadPool implements Cloneable {
   
   /**
    * Creates a new {@link org.apache.lucene.index.DocumentsWriterPerThreadPool} with a given maximum of {@link org.apache.lucene.index.DocumentsWriterPerThreadPool.ThreadState}s.
+   * 创建一个指定最大ThreadState数目的DocumentsWriterPerThreadPool
    */
   DocumentsWriterPerThreadPool(int maxNumThreadStates) {
     if (maxNumThreadStates < 1) {
       throw new IllegalArgumentException("maxNumThreadStates must be >= 1 but was: " + maxNumThreadStates);
     }
+    // 根据maxNumThreadStatus实例化多个ThreadState
+    // 初始的时候, 只是实例化一个数据, 不会去实例化ThreadState
     threadStates = new ThreadState[maxNumThreadStates];
+    // 指定可用的threadState为0
     numThreadStatesActive = 0;
   }
-
+  
+  /**
+   * 初始化
+   * @param documentsWriter
+   * @param globalFieldMap
+   * @param config
+   */
   void initialize(DocumentsWriter documentsWriter, FieldNumbers globalFieldMap, LiveIndexWriterConfig config) {
     this.documentsWriter.set(documentsWriter); // thread pool is bound to DW
     this.globalFieldMap.set(globalFieldMap);

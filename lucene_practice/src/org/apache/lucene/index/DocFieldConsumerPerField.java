@@ -23,7 +23,9 @@ import java.io.IOException;
  * 
  */
 abstract class DocFieldConsumerPerField {
-  /** Processes all occurrences of a single field */
+  /** Processes all occurrences of a single field 
+   *  处理在一个相同类型Field的所有出现
+   * */
   abstract void processFields(IndexableField[] fields, int count) throws IOException;
   abstract void abort();
   abstract FieldInfo getFieldInfo();

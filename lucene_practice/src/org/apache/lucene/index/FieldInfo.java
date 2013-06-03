@@ -26,6 +26,8 @@ import java.util.Map;
  *  of this class are thread-safe for multiple readers, but only one thread can
  *  be adding documents at a time, with no other reader or writer threads
  *  accessing this object.
+ *  
+ *  Field的信息
  **/
 
 public final class FieldInfo {

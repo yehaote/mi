@@ -43,6 +43,9 @@ import org.apache.lucene.util.RamUsageEstimator;
 import static org.apache.lucene.util.ByteBlockPool.BYTE_BLOCK_MASK;
 import static org.apache.lucene.util.ByteBlockPool.BYTE_BLOCK_SIZE;
 
+/**
+ * 处理文档的每个线程的用例
+ */
 class DocumentsWriterPerThread {
 
   /**
@@ -85,8 +88,9 @@ class DocumentsWriterPerThread {
               -> code: DocValuesProcessor
     */
 
-    // Build up indexing chain:
 
+    // Build up indexing chain:
+    // 建立处理链
       final TermsHashConsumer termVectorsWriter = new TermVectorsConsumer(documentsWriterPerThread);
       final TermsHashConsumer freqProxWriter = new FreqProxTermsWriter();
 
@@ -94,6 +98,8 @@ class DocumentsWriterPerThread {
                                                           new TermsHash(documentsWriterPerThread, termVectorsWriter, false, null));
       final NormsConsumer normsWriter = new NormsConsumer();
       final DocInverter docInverter = new DocInverter(documentsWriterPerThread.docState, termsHash, normsWriter);
+      
+      
       final StoredFieldsConsumer storedFields = new TwoStoredFieldsConsumers(
                                                       new StoredFieldsProcessor(documentsWriterPerThread),
                                                       new DocValuesProcessor(documentsWriterPerThread.bytesUsed));

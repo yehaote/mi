@@ -19,24 +19,33 @@ package org.apache.lucene.index;
 
 import java.io.IOException;
 
+/**
+ *  
+ */
 abstract class InvertedDocConsumerPerField {
 
   // Called once per field, and is given all IndexableField
   // occurrences for this field in the document.  Return
   // true if you wish to see inverted tokens for these
   // fields:
+  // 每个Field调用一次, 给出当前Field在这个document中所有出现的IndexableField.
+  // 返回true, 如果你希望看到这个Field的inverted token.
   abstract boolean start(IndexableField[] fields, int count) throws IOException;
 
   // Called before a field instance is being processed
+  // 在一个field实例被处理前调用
   abstract void start(IndexableField field);
   
   // Called once per inverted token
+  // 没一个inverted token 调用一次
   abstract void add() throws IOException;
 
   // Called once per field per document, after all IndexableFields
   // are inverted
+  // 在这个文档中, 当前域(相同的field name)的所有IndexableField完成以后, 调用一次
   abstract void finish() throws IOException;
 
   // Called on hitting an aborting exception
+  // 当碰到一个中断的异常的时候调用一次
   abstract void abort();
 }

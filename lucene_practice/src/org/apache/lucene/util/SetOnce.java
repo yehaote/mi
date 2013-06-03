@@ -27,6 +27,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * will fail.
  *
  * @lucene.experimental
+ * 
+ * 
  */
 public final class SetOnce<T> {
 
