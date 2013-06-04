@@ -404,6 +404,7 @@ final class DocumentsWriter {
 	// 
     boolean maybeMerge = preUpdate();
     
+    // 通过获取不同的perThread
     final ThreadState perThread = flushControl.obtainAndLock();
 
     final DocumentsWriterPerThread flushingDWPT;
