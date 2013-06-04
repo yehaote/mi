@@ -64,15 +64,26 @@ public class Field implements IndexableField {
    */
   protected final String name;
 
-  /** Field's value */
+  /** Field's value
+   * <p/>
+   *  field的值
+   *  主要有两种?
+   *  1: Reader 2.String或者Number
+   * */
   protected Object fieldsData;
 
   /** Pre-analyzed tokenStream for indexed fields; this is
    * separate from fieldsData because you are allowed to
    * have both; eg maybe field has a String value but you
-   * customize how it's tokenized */
+   * customize how it's tokenized
+   * <p/>
+   * 给索引的Field预先已经分词的tokenStreamser.
+   * 跟fieldsData是独立开来的, 因为允许两个都有;
+   * 比如: field有一个String value, 不过你指定了如何分词.
+   * 分词出来的数据跟原先存的数据是不一样的?
+   * */
   protected TokenStream tokenStream;
-
+  
   private transient TokenStream internalTokenStream;
   private transient ReusableStringReader internalReader;
 
@@ -258,6 +269,10 @@ public class Field implements IndexableField {
    * The value of the field as a String, or null. If null, the Reader value or
    * binary value is used. Exactly one of stringValue(), readerValue(), and
    * getBinaryValue() must be set.
+   * <p>
+   * 以String的形式返回当前field的值或者null.
+   * 如果是null的话, 说明fieldsData是一个Reader或者有binary值.
+   * 
    */
   @Override
   public String stringValue() {
@@ -428,6 +443,7 @@ public class Field implements IndexableField {
   
   @Override
   public String name() {
+	// 获取Field的name
     return name;
   }
   
@@ -498,17 +514,25 @@ public class Field implements IndexableField {
     return type;
   }
 
+  /**
+   * 所有IndexableField的实现的tokenStream方法, 都是调用当前这个方法
+   * 全局的分词方法
+   */
   @Override
   public TokenStream tokenStream(Analyzer analyzer) throws IOException {
+	// 如果当前的Field不需要索引的话直接返回
     if (!fieldType().indexed()) {
       return null;
     }
-
+    
+    // 查看当前的Field是否是数值类型的
     final NumericType numericType = fieldType().numericType();
     if (numericType != null) {
+      // 如果是数值类型的话建立NumericTokenStream并返回
       if (!(internalTokenStream instanceof NumericTokenStream)) {
         // lazy init the TokenStream as it is heavy to instantiate
         // (attributes,...) if not needed (stored field loading)
+    	// 懒加载tokenStream
         internalTokenStream = new NumericTokenStream(type.numericPrecisionStep());
       }
       final NumericTokenStream nts = (NumericTokenStream) internalTokenStream;
@@ -530,13 +554,17 @@ public class Field implements IndexableField {
       default:
         throw new AssertionError("Should never get here");
       }
+      // 返回数值型的tokenStream
       return internalTokenStream;
     }
-
+    
+    // 当前的field是否需要分词
     if (!fieldType().tokenized()) {
+      // 如果是不分词索引的情况的话
       if (stringValue() == null) {
         throw new IllegalArgumentException("Non-Tokenized Fields must have a String value");
       }
+      // 实例化一个StringTokenStream并返回
       if (!(internalTokenStream instanceof StringTokenStream)) {
         // lazy init the TokenStream as it is heavy to instantiate
         // (attributes,...) if not needed (stored field loading)
@@ -545,16 +573,19 @@ public class Field implements IndexableField {
       ((StringTokenStream) internalTokenStream).setValue(stringValue());
       return internalTokenStream;
     }
-
+    
     if (tokenStream != null) {
+      // 如果已经有预先分配的tokenStream的话, 直接返回
       return tokenStream;
     } else if (readerValue() != null) {
+      // 如果获取field的值不为空的话
       return analyzer.tokenStream(name(), readerValue());
     } else if (stringValue() != null) {
       if (internalReader == null) {
         internalReader = new ReusableStringReader();
       }
       internalReader.setValue(stringValue());
+      // 
       return analyzer.tokenStream(name(), internalReader);
     }
 

@@ -31,9 +31,12 @@ public class FieldType implements IndexableFieldType {
 
   /** Data type of the numeric value
    * @since 3.2
+   * <p>
+   * 数值类值的数据类型
    */
   public static enum NumericType {
-    /** 32-bit integer numeric type */
+    /** 32-bit integer numeric type 
+     * */
     INT, 
     /** 64-bit long numeric type */
     LONG, 
@@ -43,15 +46,15 @@ public class FieldType implements IndexableFieldType {
     DOUBLE
   }
 
-  private boolean indexed;
-  private boolean stored;
-  private boolean tokenized = true;
-  private boolean storeTermVectors;
-  private boolean storeTermVectorOffsets;
-  private boolean storeTermVectorPositions;
-  private boolean storeTermVectorPayloads;
-  private boolean omitNorms;
-  private IndexOptions indexOptions = IndexOptions.DOCS_AND_FREQS_AND_POSITIONS;
+  private boolean indexed; // 是否索引
+  private boolean stored; // 是否存储
+  private boolean tokenized = true; // 是否分词, 默认为true
+  private boolean storeTermVectors; // 是否存储term vector
+  private boolean storeTermVectorOffsets; // 是否存储term vector的 offset
+  private boolean storeTermVectorPositions;// 是否存储term vector的 position
+  private boolean storeTermVectorPayloads;// 是否存储term vector的 payload
+  private boolean omitNorms; // 忽略 norms
+  private IndexOptions indexOptions = IndexOptions.DOCS_AND_FREQS_AND_POSITIONS; // 
   private NumericType numericType;
   private boolean frozen;
   private int numericPrecisionStep = NumericUtils.PRECISION_STEP_DEFAULT;

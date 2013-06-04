@@ -91,6 +91,8 @@ public interface IndexableField {
    * implementations should use the given Analyzer to create the TokenStreams.
    * 创建一个TokenStream用来为这个field建立索引.
    * 如果合适的话, 实现类需要使用给出的analyzer去创建这个TokenStreams.
+   * 
+   * 具体分词方法调用的地方, Field调用这个方法来根据当前的field信息和analyzer产生token
    * @param analyzer Analyzer that should be used to create the TokenStreams from
    * @return TokenStream value for indexing the document.  Should always return
    *         a non-null value if the field is to be indexed

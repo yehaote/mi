@@ -26,7 +26,7 @@ import java.util.Map;
  *  of this class are thread-safe for multiple readers, but only one thread can
  *  be adding documents at a time, with no other reader or writer threads
  *  accessing this object.
- *  
+ *  <p>
  *  Field的信息
  **/
 
@@ -74,11 +74,18 @@ public final class FieldInfo {
      * Indexes documents, frequencies and positions.
      * This is a typical default for full-text search: full scoring is enabled
      * and positional queries are supported.
+     * <p>
+     * 索引文档, 保留frequencies和position信息.
+     * 默认全文检索的标准配置, 支持所有的得分计算, 并支持position查询.
      */
     DOCS_AND_FREQS_AND_POSITIONS,
     /** 
      * Indexes documents, frequencies, positions and offsets.
      * Character offsets are encoded alongside the positions. 
+     * <p>
+     * 最全的一个
+     * 索引文档, 保留frequencies, position和offset信息.
+     * Character offsets将会编码在position信息旁边.
      */
     DOCS_AND_FREQS_AND_POSITIONS_AND_OFFSETS,
   };

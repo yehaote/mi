@@ -48,10 +48,10 @@ final class TermsHash extends InvertedDocConsumer {
 
   final IntBlockPool intPool; // 存储int的池
   final ByteBlockPool bytePool; // 存储byte的池
-  ByteBlockPool termBytePool;
+  ByteBlockPool termBytePool; //  对于一条链上的TermHash是可以共享的
   final Counter bytesUsed;
 
-  final boolean primary;
+  final boolean primary; // 是否是主要的?
   final DocumentsWriterPerThread.DocState docState;
 
   // Used when comparing postings via termRefComp, in TermsHashPerField
@@ -61,7 +61,7 @@ final class TermsHash extends InvertedDocConsumer {
   // Used by perField to obtain terms from the analysis chain
   final BytesRef termBytesRef = new BytesRef(10);
 
-  final boolean trackAllocations;
+  final boolean trackAllocations; // 是否跟踪所有的byte使用
 
   public TermsHash(final DocumentsWriterPerThread docWriter, final TermsHashConsumer consumer, boolean trackAllocations, final TermsHash nextTermsHash) {
     this.docState = docWriter.docState;
@@ -74,6 +74,8 @@ final class TermsHash extends InvertedDocConsumer {
 
     if (nextTermsHash != null) {
       // We are primary
+      // 如果还有nextTermHash就说明当前这个是primary,
+      // 这样的话就让nextTermHash共用自己的TermBytePool
       primary = true;
       termBytePool = bytePool;
       nextTermsHash.termBytePool = bytePool;
@@ -97,6 +99,7 @@ final class TermsHash extends InvertedDocConsumer {
   // Clear all state
   void reset() {
     // we don't reuse so we drop everything and don't fill with 0
+	// 因为不需要重用, 所有丢弃所有的数据, 也不需要置为0
     intPool.reset(false, false); 
     bytePool.reset(false, false);
   }
@@ -129,6 +132,7 @@ final class TermsHash extends InvertedDocConsumer {
 
   @Override
   InvertedDocConsumerPerField addField(DocInverterPerField docInverterPerField, final FieldInfo fieldInfo) {
+	  // 每次都产生一个新的InvertedDocConsumerPerField(TermsHashPerField)
     return new TermsHashPerField(docInverterPerField, this, nextTermsHash, fieldInfo);
   }
 
