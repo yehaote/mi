@@ -28,15 +28,16 @@ import org.apache.lucene.util.RamUsageEstimator;
 /**
  * Holds all per thread, per field state.
  * 存储所有per thread, per field的状态.
+ * (针对相同的name的field. 相同name的Field都必须有相同的配置? 只有一个FiledInfo进行存储)
  */
 
 final class DocFieldProcessorPerField {
 
-  final DocFieldConsumerPerField consumer;
-  final FieldInfo fieldInfo;
+  final DocFieldConsumerPerField consumer; // 对docFieldProcessor的consumer的引用
+  final FieldInfo fieldInfo; // 当前Field的fieldInfo
   private final Counter bytesUsed;
 
-  DocFieldProcessorPerField next;
+  DocFieldProcessorPerField next; // hash表单元的链式结构
   int lastGen = -1;
 
   int fieldCount; // 记录当前有多少Field

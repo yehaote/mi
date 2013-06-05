@@ -22,15 +22,34 @@ import java.util.Map;
 
 abstract class InvertedDocConsumer {
 
-  /** Abort (called after hitting AbortException) */
+  /** Abort (called after hitting AbortException) 
+   *  <p>
+   *  中断(在碰到一个中断异常的时候进行调用)
+   * */
   abstract void abort();
 
-  /** Flush a new segment */
+  /** Flush a new segment 
+   *  刷新输出一个新的segment
+   * */
   abstract void flush(Map<String, InvertedDocConsumerPerField> fieldsToFlush, SegmentWriteState state) throws IOException;
-
+  
+  /**
+   * 返回一
+   * @param docInverterPerField
+   * @param fieldInfo
+   * @return
+   */
   abstract InvertedDocConsumerPerField addField(DocInverterPerField docInverterPerField, FieldInfo fieldInfo);
-
+  
+  /**
+   * 开始处理一个Document
+   * @throws IOException
+   */
   abstract void startDocument() throws IOException;
 
+  /**
+   * 处理完成一个Document
+   * @throws IOException
+   */
   abstract void finishDocument() throws IOException;
 }

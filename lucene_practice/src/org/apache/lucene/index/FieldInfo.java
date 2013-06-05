@@ -28,6 +28,8 @@ import java.util.Map;
  *  accessing this object.
  *  <p>
  *  Field的信息
+ *  跟Field Info file
+ *  
  **/
 
 public final class FieldInfo {

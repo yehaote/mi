@@ -106,15 +106,18 @@ class DocumentsWriterPerThread {
       return new DocFieldProcessor(documentsWriterPerThread, docInverter, storedFields);
     }
   };
-
+  
+  /**
+   * 保存当前文档的状态?
+   */
   static class DocState {
-    final DocumentsWriterPerThread docWriter;
-    Analyzer analyzer;
+    final DocumentsWriterPerThread docWriter; //对DocumentsWriterPerThread的引用
+    Analyzer analyzer; // 分词器
     InfoStream infoStream;
     Similarity similarity;
     int docID;
-    Iterable<? extends IndexableField> doc;
-    String maxTermPrefix;
+    Iterable<? extends IndexableField> doc; // 组成当前Doc的Field?
+    String maxTermPrefix; 
 
     DocState(DocumentsWriterPerThread docWriter, InfoStream infoStream) {
       this.docWriter = docWriter;

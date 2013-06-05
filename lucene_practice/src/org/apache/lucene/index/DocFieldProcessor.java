@@ -55,13 +55,13 @@ final class DocFieldProcessor extends DocConsumer {
   // Hash table for all fields ever seen
   // 用于存储所有见过的field的Hash表
   DocFieldProcessorPerField[] fieldHash = new DocFieldProcessorPerField[2];
-  int hashMask = 1;
+  int hashMask = 1; // hash表的掩码, 所产生的hash值经过掩码都会投射到 0-hashMask 的范围内
   int totalFieldCount;
 
   int fieldGen;
   final DocumentsWriterPerThread.DocState docState;
 
-  final Counter bytesUsed;
+  final Counter bytesUsed; // 记录当前使用的byte?
 
   public DocFieldProcessor(DocumentsWriterPerThread docWriter, DocFieldConsumer consumer, StoredFieldsConsumer storedConsumer) {
     this.docState = docWriter.docState;
@@ -198,17 +198,22 @@ final class DocFieldProcessor extends DocConsumer {
     // Also absorb any changes to fields we had already
     // seen before (eg suddenly turning on norms or
     // vectors, etc.):
-
+    // 迭代当前document的field
     for(IndexableField field : docState.doc) {
+      // 获取field的name
       final String fieldName = field.name();
-
+      
       // Make sure we have a PerField allocated
-      final int hashPos = fieldName.hashCode() & hashMask;
-      DocFieldProcessorPerField fp = fieldHash[hashPos];
+      // 确认已经有一个PerField分配
+      final int hashPos = fieldName.hashCode() & hashMask; // 计算hash值
+      DocFieldProcessorPerField fp = fieldHash[hashPos]; // 获取对应的DocFieldProcessPerField
+      // fp==null的话说明, 当前在hash表中还没有处理过这个Field
       while(fp != null && !fp.fieldInfo.name.equals(fieldName)) {
+    	// 如果找到链表, 但是field name对不上的话, 根据链表结构顺序查找
         fp = fp.next;
       }
-
+      
+      // 如果还是==null的话, 说明当前Field不在hash表中
       if (fp == null) {
 
         // TODO FI: we need to genericize the "flags" that a
@@ -216,6 +221,9 @@ final class DocFieldProcessor extends DocConsumer {
         // needs to be more "pluggable" such that if I want
         // to have a new "thing" my Fields can do, I can
         // easily add it
+    	// TODO FI: 我们需要泛型化Field中的这些标识, 这些标识怎么合并;
+    	// 它需要变得更加"pluggable"(可插的), 那样我们如果想要给field添加一些信息的时候,
+    	// 可以很方便地进行.
         FieldInfo fi = fieldInfos.addOrUpdate(fieldName, field.fieldType());
 
         fp = new DocFieldProcessorPerField(this, fi);

@@ -30,6 +30,8 @@ import org.apache.lucene.util.IOUtils;
 /** Writes norms.  Each thread X field accumulates the norms
  *  for the doc/fields it saw, then the flush method below
  *  merges all of these together into a single _X.nrm file.
+ *  <p>
+ *  写入Norms信息. 每一个 
  */
 
 final class NormsConsumer extends InvertedDocEndConsumer {
