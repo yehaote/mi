@@ -26,6 +26,7 @@ import java.util.Map;
 abstract class DocFieldConsumer {
   /** Called when DocumentsWriterPerThread decides to create a new
    *  segment 
+   *  <p>
    *  当DocumentsWriterPerThread决定产生一个新的segment的时候调用这个方法
    *  */
   abstract void flush(Map<String, DocFieldConsumerPerField> fieldsToFlush, SegmentWriteState state) throws IOException;
@@ -36,7 +37,12 @@ abstract class DocFieldConsumer {
   abstract void abort();
 
   abstract void startDocument() throws IOException;
-
+  
+  /**
+   * 添加一个Field, 返回一个DocFieldConsumerPerField的实现
+   * @param fi
+   * @return
+   */
   abstract DocFieldConsumerPerField addField(FieldInfo fi);
 
   abstract void finishDocument() throws IOException;

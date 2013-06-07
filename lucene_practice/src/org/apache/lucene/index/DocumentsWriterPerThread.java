@@ -468,7 +468,10 @@ class DocumentsWriterPerThread {
     return globalDeletes;
   }
 
-  /** Flush all pending docs to a new segment */
+  /** Flush all pending docs to a new segment 
+   * <p>
+   * 刷新输出所有的待定的doc到一个新的Segment
+   * */
   FlushedSegment flush() throws IOException {
     assert numDocsInRAM > 0;
     assert deleteSlice == null : "all deletes must be applied in prepareFlush";
@@ -505,6 +508,7 @@ class DocumentsWriterPerThread {
     boolean success = false;
 
     try {
+      // 刷新输出
       consumer.flush(flushState);
       pendingDeletes.terms.clear();
       segmentInfo.setFiles(new HashSet<String>(directory.getCreatedFiles()));
@@ -545,8 +549,11 @@ class DocumentsWriterPerThread {
 
       FlushedSegment fs = new FlushedSegment(segmentInfoPerCommit, flushState.fieldInfos,
                                              segmentDeletes, flushState.liveDocs, flushState.delCountOnFlush);
+      // 输出.si
       sealFlushedSegment(fs);
+      
       doAfterFlush();
+      
       success = true;
 
       return fs;
@@ -587,6 +594,7 @@ class DocumentsWriterPerThread {
       // creating CFS so that 1) .si isn't slurped into CFS,
       // and 2) .si reflects useCompoundFile=true change
       // above:
+      // 输出 .si文件, segment info file
       codec.segmentInfoFormat().getSegmentInfoWriter().write(directory, newSegment.info, flushedSegment.fieldInfos, context);
 
       // TODO: ideally we would freeze newSegment here!!

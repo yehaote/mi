@@ -415,7 +415,6 @@ final class DocumentsWriter {
         ensureOpen();
         throw new IllegalStateException("perThread is not active but we are still open");
       }
-      // 
       final DocumentsWriterPerThread dwpt = perThread.dwpt;
       try {
     	// 
@@ -434,7 +433,10 @@ final class DocumentsWriter {
 
     return postUpdate(flushingDWPT, maybeMerge);
   }
-
+  
+  /**
+   * 输出
+   */
   private  boolean doFlush(DocumentsWriterPerThread flushingDWPT) throws IOException {
     boolean maybeMerge = false;
     while (flushingDWPT != null) {
@@ -465,6 +467,7 @@ final class DocumentsWriter {
           ticket = ticketQueue.addFlushTicket(flushingDWPT);
   
           // flush concurrently without locking
+          // 刷新输出
           final FlushedSegment newSegment = flushingDWPT.flush();
           ticketQueue.addSegment(ticket, newSegment);
           // flush was successful once we reached this point - new seg. has been assigned to the ticket!
@@ -601,6 +604,7 @@ final class DocumentsWriter {
     try {
       DocumentsWriterPerThread flushingDWPT;
       // Help out with flushing:
+      // 迭代DocumentsWriterPerThread去进行flush
       while ((flushingDWPT = flushControl.nextPendingFlush()) != null) {
         anythingFlushed |= doFlush(flushingDWPT);
       }

@@ -28,25 +28,29 @@ import java.util.Map;
  *  accessing this object.
  *  <p>
  *  Field的信息
- *  跟Field Info file
- *  
+ *  跟Field Info file想对应? 描述当前的fields是否需要索引.
+ *  每一个Segment有一个独立的Field Info file.
+ *  对于多reader来说, 这个类是线程安全的, 不过只有一个线程可以添加文档在一个时间节点,
+ *  没有别的reader或者writer线程访问当前的object.
  **/
 
 public final class FieldInfo {
   /** Field's name */
   public final String name;
-  /** Internal field number */
+  /** Internal field number 
+   *  内部field的number
+   * */
   public final int number;
 
-  private boolean indexed;
-  private DocValuesType docValueType;
+  private boolean indexed; // 是否索引
+  private DocValuesType docValueType; // 值的类型
 
   // True if any document indexed term vectors
-  private boolean storeTermVector;
+  private boolean storeTermVector; // 是否存储termVector
 
-  private DocValuesType normType;
-  private boolean omitNorms; // omit norms associated with indexed fields  
-  private IndexOptions indexOptions;
+  private DocValuesType normType; // norm值的类型?
+  private boolean omitNorms; // omit norms associated with indexed fields 是否忽略norms  
+  private IndexOptions indexOptions; // 索引的选项
   private boolean storePayloads; // whether this field stores payloads together with term positions
 
   private Map<String,String> attributes;
@@ -54,15 +58,23 @@ public final class FieldInfo {
   /**
    * Controls how much information is stored in the postings lists.
    * @lucene.experimental
+   * <p>
+   * 控制在posting list中存储多少信息
    */
   public static enum IndexOptions { 
     // NOTE: order is important here; FieldInfo uses this
     // order to merge two conflicting IndexOptions (always
     // "downgrades" by picking the lowest).
+	// 注意: 在这里顺序是很重要的了; FieldInfo使用这个顺序去
+	// 合并两个冲突的IndexOptions(永远采用最低的? 是0还是3)
     /** 
      * Only documents are indexed: term frequencies and positions are omitted.
      * Phrase and other positional queries on the field will throw an exception, and scoring
      * will behave as if any term in the document appears only once.
+     * <p>
+     * 仅仅被索引: 词频和位置信息都被忽略.
+     * 跟当前Field进行短语查询和其他的位置查询会抛出异常,
+     * 计算得分的时候所有的在这个文档中的词频会被置为1.
      */
     // TODO: maybe rename to just DOCS?
     DOCS_ONLY,
@@ -70,6 +82,9 @@ public final class FieldInfo {
      * Only documents and term frequencies are indexed: positions are omitted. 
      * This enables normal scoring, except Phrase and other positional queries
      * will throw an exception.
+     * <p>
+     * 只document和词频被索引了: 位置信息被抛弃.
+     * 这个方法可以支持正常的打分, 不过关于位置信息的查询会抛异常.
      */  
     DOCS_AND_FREQS,
     /** 
@@ -96,6 +111,9 @@ public final class FieldInfo {
    * DocValues types.
    * Note that DocValues is strongly typed, so a field cannot have different types
    * across different documents.
+   * <p>
+   * DocValues的类型.
+   * 注意: DocValues是强类型的, 所以一个field不能有多个不一样的类型(甚至在多个不同的document之间).
    */
   public static enum DocValuesType {
     /** 
@@ -194,7 +212,7 @@ public final class FieldInfo {
         if (this.indexOptions == null) {
           this.indexOptions = indexOptions;
         } else {
-          // downgrade
+          // downgrade 选取小的那一个
           this.indexOptions = this.indexOptions.compareTo(indexOptions) < 0 ? this.indexOptions : indexOptions;
         }
         if (this.indexOptions.compareTo(IndexOptions.DOCS_AND_FREQS_AND_POSITIONS) < 0) {
@@ -205,7 +223,10 @@ public final class FieldInfo {
     }
     assert checkConsistency();
   }
-
+  
+  /**
+   * 更新docValueType, 如果当前已经指定过docValueType会报错
+   */
   void setDocValuesType(DocValuesType type) {
     if (docValueType != null && docValueType != type) {
       throw new IllegalArgumentException("cannot change DocValues type from " + docValueType + " to " + type + " for field \"" + name + "\"");
@@ -315,6 +336,11 @@ public final class FieldInfo {
    * <p>
    * If a value already exists for the field, it will be replaced with 
    * the new value.
+   * <p>
+   * 放置codec的attribute值.
+   * 这是一个key-value映射, codec可以用来它来存储添加的metadata, 
+   * 然后可以一个segment的codec中使用, 通过{@link #getAttribute(String)}.
+   * 如果当前的已经有一个存在的值的话, 会被新值替代
    */
   public String putAttribute(String key, String value) {
     if (attributes == null) {
@@ -325,6 +351,8 @@ public final class FieldInfo {
   
   /**
    * Returns internal codec attributes map. May be null if no mappings exist.
+   * <p>
+   * 返回内部的codec的attribute map.
    */
   public Map<String,String> attributes() {
     return attributes;

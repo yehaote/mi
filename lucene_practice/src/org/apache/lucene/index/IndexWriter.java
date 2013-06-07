@@ -2713,6 +2713,7 @@ public class IndexWriter implements Closeable, TwoPhaseCommit {
           boolean flushSuccess = false;
           boolean success = false;
           try {
+        	// 输出所有的writer线程?
             anySegmentsFlushed = docWriter.flushAllThreads();
             if (!anySegmentsFlushed) {
               // prevent double increment since docWriter#doFlush increments the flushcount
@@ -2857,6 +2858,7 @@ public class IndexWriter implements Closeable, TwoPhaseCommit {
         if (infoStream.isEnabled("IW")) {
           infoStream.message("IW", "commit: now prepare");
         }
+        // 这里就输出到I/O了?
         prepareCommitInternal();
       } else {
         if (infoStream.isEnabled("IW")) {

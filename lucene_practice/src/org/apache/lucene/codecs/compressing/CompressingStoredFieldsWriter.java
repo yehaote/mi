@@ -50,6 +50,9 @@ import org.apache.lucene.util.packed.PackedInts;
 /**
  * {@link StoredFieldsWriter} impl for {@link org.apache.lucene.codecs.compressing.CompressingStoredFieldsFormat}.
  * @lucene.experimental
+ * 
+ * <p>
+ * 基于{@link org.apache.lucene.codecs.compressing.CompressingStoredFieldsFormat}的{@link StoredFieldsWriter}实现
  */
 public final class CompressingStoredFieldsWriter extends StoredFieldsWriter {
 
@@ -80,9 +83,9 @@ public final class CompressingStoredFieldsWriter extends StoredFieldsWriter {
   private final CompressionMode compressionMode;
   private final Compressor compressor;
   private final int chunkSize;
-
-  private final GrowableByteArrayDataOutput bufferedDocs;
-  private int[] numStoredFields; // number of stored fields
+  
+  private final GrowableByteArrayDataOutput bufferedDocs; 
+  private int[] numStoredFields; // number of stored fields 记录store fields 的数量
   private int[] endOffsets; // end offsets in bufferedDocs
   private int docBase; // doc ID at the beginning of the chunk
   private int numBufferedDocs; // docBase + numBufferedDocs == current doc ID
@@ -188,7 +191,10 @@ public final class CompressingStoredFieldsWriter extends StoredFieldsWriter {
       }
     }
   }
-
+  
+  /**
+   * 输出到.fdt
+   */
   private void writeHeader(int docBase, int numBufferedDocs, int[] numStoredFields, int[] lengths) throws IOException {
     // save docBase and numBufferedDocs
     fieldsStream.writeVInt(docBase);

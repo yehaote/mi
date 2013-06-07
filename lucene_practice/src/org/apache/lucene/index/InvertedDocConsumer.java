@@ -34,10 +34,7 @@ abstract class InvertedDocConsumer {
   abstract void flush(Map<String, InvertedDocConsumerPerField> fieldsToFlush, SegmentWriteState state) throws IOException;
   
   /**
-   * 返回一
-   * @param docInverterPerField
-   * @param fieldInfo
-   * @return
+   * 返回一个InvertedDocConsumerPerField
    */
   abstract InvertedDocConsumerPerField addField(DocInverterPerField docInverterPerField, FieldInfo fieldInfo);
   

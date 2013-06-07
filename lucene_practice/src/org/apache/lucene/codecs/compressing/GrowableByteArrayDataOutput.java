@@ -24,6 +24,8 @@ import org.apache.lucene.util.ArrayUtil;
 
 /**
  * A {@link org.apache.lucene.store.DataOutput} that can be used to build a byte[].
+ * <p>
+ * 可以用来构建一个byte[]的DataOutput
  */
 final class GrowableByteArrayDataOutput extends DataOutput {
 

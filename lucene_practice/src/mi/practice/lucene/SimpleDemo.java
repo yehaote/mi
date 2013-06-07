@@ -29,7 +29,9 @@ public class SimpleDemo {
         Version version = Version.LUCENE_43;
         // 创建一个Document
         Document document = new Document();
-        Field field = new StringField("name", "value", Field.Store.NO);
+        Field field = new StringField("name", "value", Field.Store.YES);
+        Field fieldStore = new StringField("store_field", "store_value", Field.Store.YES);
+        document.add(fieldStore);
         document.add(field);
         // 创建一个目录, 用于存放索引
         Directory directory = FSDirectory.open(new File("/home/waf/tmp/index"));

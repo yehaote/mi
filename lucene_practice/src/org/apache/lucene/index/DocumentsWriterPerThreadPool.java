@@ -151,6 +151,7 @@ abstract class DocumentsWriterPerThreadPool implements Cloneable {
     this.documentsWriter.set(documentsWriter); // thread pool is bound to DW
     this.globalFieldMap.set(globalFieldMap);
     for (int i = 0; i < threadStates.length; i++) {
+      // 根据全局的globalFileMap(FieldNumber)实例化一个FieldInfos.Builder给当前要分配的DocumentWriterPerThread
       final FieldInfos.Builder infos = new FieldInfos.Builder(globalFieldMap);
       threadStates[i] = new ThreadState(new DocumentsWriterPerThread(documentsWriter.directory, documentsWriter, infos, documentsWriter.chain));
     }

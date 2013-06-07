@@ -32,7 +32,7 @@ import org.apache.lucene.util.IOUtils;
  * analysis to its own consumer
  * (InvertedDocConsumerPerField).  It also interacts with an
  * endConsumer (InvertedDocEndConsumerPerField).
- * 
+ * <p>
  * 保存一个文档中一个Field下的所有倒排数据?
  * 这个类本身不做任何的操作, 它负责把分词器产生的数据传递给它自己的消费者
  * (InvertedDocumentPerField).

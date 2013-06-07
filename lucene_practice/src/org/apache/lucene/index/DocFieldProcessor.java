@@ -43,7 +43,7 @@ import org.apache.lucene.util.Counter;
 
 final class DocFieldProcessor extends DocConsumer {
 
-  final DocFieldConsumer consumer; //Field的consumer?
+  final DocFieldConsumer consumer; //Field的consumer?(DocInvert)
   final StoredFieldsConsumer storedConsumer; // 储存的field的consumer?
   final Codec codec; // 编码方式
 
@@ -58,7 +58,7 @@ final class DocFieldProcessor extends DocConsumer {
   int hashMask = 1; // hash表的掩码, 所产生的hash值经过掩码都会投射到 0-hashMask 的范围内
   int totalFieldCount;
 
-  int fieldGen;
+  int fieldGen; // 用来标识当前是不是在处理同一个Document?
   final DocumentsWriterPerThread.DocState docState;
 
   final Counter bytesUsed; // 记录当前使用的byte?
@@ -81,14 +81,17 @@ final class DocFieldProcessor extends DocConsumer {
     }
 
     assert fields.size() == totalFieldCount;
-
+    
+    // 刷新输出.fdt .fdx
     storedConsumer.flush(state);
+    // 刷新输出.doc .tim .tip
     consumer.flush(childFields, state);
 
     // Important to save after asking consumer to flush so
     // consumer can alter the FieldInfo* if necessary.  EG,
     // FreqProxTermsWriter does this with
     // FieldInfo.storePayload.
+    // 刷新输出.fnm
     FieldInfosWriter infosWriter = codec.fieldInfosFormat().getFieldInfosWriter();
     infosWriter.write(state.directory, state.segmentInfo.name, state.fieldInfos, IOContext.DEFAULT);
   }
@@ -198,7 +201,11 @@ final class DocFieldProcessor extends DocConsumer {
     // Also absorb any changes to fields we had already
     // seen before (eg suddenly turning on norms or
     // vectors, etc.):
-    // 迭代当前document的field
+    
+    // 吸收在这个document中新出现的Field.
+    // 还吸收以前老的Field的一些变更(比如打开了Field的Norms或者Field)
+    
+    /* 迭代当前document的field */
     for(IndexableField field : docState.doc) {
       // 获取field的name
       final String fieldName = field.name();
@@ -225,8 +232,9 @@ final class DocFieldProcessor extends DocConsumer {
     	// 它需要变得更加"pluggable"(可插的), 那样我们如果想要给field添加一些信息的时候,
     	// 可以很方便地进行.
         FieldInfo fi = fieldInfos.addOrUpdate(fieldName, field.fieldType());
-
+        // 为当前的Field实例化一个新的DocFieldProcessorPerField
         fp = new DocFieldProcessorPerField(this, fi);
+        // 放入Hash Table链表中的头上
         fp.next = fieldHash[hashPos];
         fieldHash[hashPos] = fp;
         totalFieldCount++;
@@ -239,7 +247,7 @@ final class DocFieldProcessor extends DocConsumer {
       }
 
       if (thisFieldGen != fp.lastGen) {
-
+    	// 不相等说是在当前文档中第一次碰到这个Field?
         // First time we're seeing this field for this doc
         fp.fieldCount = 0;
 
@@ -253,8 +261,9 @@ final class DocFieldProcessor extends DocConsumer {
         fields[fieldCount++] = fp;
         fp.lastGen = thisFieldGen;
       }
-
+      // 把当前的Field添加到DocFieldProcessorPerField中
       fp.addField(field);
+      // 添加到存储的Field的consumer中
       storedConsumer.addField(docState.docID, field, fp.fieldInfo);
     }
 
@@ -264,9 +273,13 @@ final class DocFieldProcessor extends DocConsumer {
     // sort the subset of fields that have vectors
     // enabled; we could save [small amount of] CPU
     // here.
+    // 把DocFieldProcessorPerField[] 按Field name排序
     ArrayUtil.quickSort(fields, 0, fieldCount, fieldsComp);
     for(int i=0;i<fieldCount;i++) {
       final DocFieldProcessorPerField perField = fields[i];
+      // 依次调用没perField的consumer去处理Field
+      // 这个consumer是在构造DocFieldProcessorPerField的时候调用当前consumer.addField实例化出来的
+      // 这里传入的Fields是有相同Field name的fields
       perField.consumer.processFields(perField.fields, perField.fieldCount);
     }
 

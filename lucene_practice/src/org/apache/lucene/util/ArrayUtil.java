@@ -348,7 +348,13 @@ public final class ArrayUtil {
     } else
       return array;
   }
-
+  
+  /**
+   * 
+   * @param array
+   * @param minSize
+   * @return
+   */
   public static byte[] grow(byte[] array, int minSize) {
     assert minSize >= 0: "size must be positive (got " + minSize + "): likely integer overflow?";
     if (array.length < minSize) {
