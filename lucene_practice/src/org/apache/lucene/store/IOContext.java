@@ -22,7 +22,7 @@ package org.apache.lucene.store;
  * object can never be initialized as null as passed as a parameter to either
  * {@link Directory#openInput(String, org.apache.lucene.store.IOContext)} or
  * {@link Directory#createOutput(String, org.apache.lucene.store.IOContext)}
- * 
+ * <p>
  * IOContext包含额外的信息在merge/search context.
  * 一个IOContexnt不会被出是化为null做为一个参数传入Directory.openInput()或者
  * Directory.createOutput()

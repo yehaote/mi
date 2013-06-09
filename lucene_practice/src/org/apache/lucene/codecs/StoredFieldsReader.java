@@ -28,6 +28,8 @@ import org.apache.lucene.index.StoredFieldVisitor;
  * read the stored fields for a document, implement {@link #clone()} (creating
  * clones of any IndexInputs used, etc), and {@link #close()}
  * @lucene.experimental
+ * <p>
+ * 
  */
 public abstract class StoredFieldsReader implements Cloneable, Closeable {
   /** Sole constructor. (For invocation by subclass 

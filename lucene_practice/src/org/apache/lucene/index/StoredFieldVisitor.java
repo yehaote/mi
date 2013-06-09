@@ -38,7 +38,15 @@ import org.apache.lucene.document.DocumentStoredFieldVisitor;
  * {@link Document} containing all stored fields.  This is
  * used by {@link org.apache.lucene.index.IndexReader#document(int)}.
  *
- * @lucene.experimental */
+ * @lucene.experimental 
+ * <p>
+ * 高级: 提供访问索引中存储Field的低等级操作.
+ * See {@link org.apache.lucene.index.IndexReader#document(int,org.apache.lucene.index.StoredFieldVisitor)}.
+ * <p><b>注意</b>: 一个{@code StoreFieldVistor}实现, 不要去尝试加载或读取另外存储的document在相同Reader中,
+ * 因为Stored的实现对于大多数codec是不reeentrant.
+ * <p>DocumentStoredFieldVisitor构建一个Document包含所有的存储Field. 
+ * 在{@link org.apache.lucene.index.IndexReader#document(int)}.
+ * */
 
 public abstract class StoredFieldVisitor {
 
@@ -48,28 +56,39 @@ public abstract class StoredFieldVisitor {
   }
   
   /** Process a binary field. 
-   * @param value newly allocated byte array with the binary contents. 
+   * @param value newly allocated byte array with the binary contents.
+   * 处理一个binary field 
    */
   public void binaryField(FieldInfo fieldInfo, byte[] value) throws IOException {
   }
 
-  /** Process a string field */
+  /** Process a string field 
+   *  处理一个StringField
+   * */
   public void stringField(FieldInfo fieldInfo, String value) throws IOException {
   }
 
-  /** Process a int numeric field. */
+  /** Process a int numeric field. 
+   *  处理一个int 数值类型的field
+   * */
   public void intField(FieldInfo fieldInfo, int value) throws IOException {
   }
 
-  /** Process a long numeric field. */
+  /** Process a long numeric field.
+   *  处理一个long 数值类型的Field 
+   * */
   public void longField(FieldInfo fieldInfo, long value) throws IOException {
   }
 
-  /** Process a float numeric field. */
+  /** Process a float numeric field. 
+   *  处理一个float 数值类型的Field
+   * */
   public void floatField(FieldInfo fieldInfo, float value) throws IOException {
   }
 
-  /** Process a double numeric field. */
+  /** Process a double numeric field. 
+   *  处理一个document 数值类型的Field
+   * */
   public void doubleField(FieldInfo fieldInfo, double value) throws IOException {
   }
   
@@ -79,11 +98,17 @@ public abstract class StoredFieldVisitor {
    * subclasses can return a {@link org.apache.lucene.index.StoredFieldVisitor.Status} representing whether
    * they need that particular field or not, or to stop processing
    * entirely.
+   * <p>
+   * 在处理Field前挂载, 这个方法被调用以后子类可以返回一个
+   * {@link org.apache.lucene.index.StoredFieldVisitor.Status} 
+   * 表现特定的Field是否需要读取, 或者全部停止处理.
    */
   public abstract Status needsField(FieldInfo fieldInfo) throws IOException;
   
   /**
    * Enumeration of possible return values for {@link #needsField}.
+   * <p>
+   * 列举{@link #needsField}可以返回的值
    */
   public static enum Status {
     /** YES: the field should be visited. */

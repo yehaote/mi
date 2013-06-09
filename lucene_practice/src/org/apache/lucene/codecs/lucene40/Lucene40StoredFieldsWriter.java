@@ -45,6 +45,9 @@ import org.apache.lucene.util.IOUtils;
  * 
  * @see org.apache.lucene.codecs.lucene40.Lucene40StoredFieldsFormat
  * @lucene.experimental 
+ * <p>
+ * 负责写入Document的存储Field的类.
+ * 它使用&lt;segment&gt;.fdt 和 &lt;segment&gt;.fdx 文件.
  */
 public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
   // NOTE: bit 0 is free here!  You can steal it!
@@ -79,10 +82,10 @@ public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
   /** Extension of stored fields index file */
   public static final String FIELDS_INDEX_EXTENSION = "fdx";
 
-  private final Directory directory;
-  private final String segment;
-  private IndexOutput fieldsStream;
-  private IndexOutput indexStream;
+  private final Directory directory; // 当前的directory 
+  private final String segment; // segment标识
+  private IndexOutput fieldsStream; //fieldsData  fdt
+  private IndexOutput indexStream; // fieldsIndex fdx
 
   /** Sole constructor. */
   public Lucene40StoredFieldsWriter(Directory directory, String segment, IOContext context) throws IOException {
@@ -92,11 +95,14 @@ public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
 
     boolean success = false;
     try {
+      // 创建输出的文件
       fieldsStream = directory.createOutput(IndexFileNames.segmentFileName(segment, "", FIELDS_EXTENSION), context);
       indexStream = directory.createOutput(IndexFileNames.segmentFileName(segment, "", FIELDS_INDEX_EXTENSION), context);
-
+      
+      // 写入头
       CodecUtil.writeHeader(fieldsStream, CODEC_NAME_DAT, VERSION_CURRENT);
       CodecUtil.writeHeader(indexStream, CODEC_NAME_IDX, VERSION_CURRENT);
+      // 检验一些当前在文件中的位置是否是写入头以后的位置
       assert HEADER_LENGTH_DAT == fieldsStream.getFilePointer();
       assert HEADER_LENGTH_IDX == indexStream.getFilePointer();
       success = true;
@@ -111,11 +117,20 @@ public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
   // and adds a new entry for this document into the index
   // stream.  This assumes the buffer was already written
   // in the correct fields format.
+  @Override
   public void startDocument(int numStoredFields) throws IOException {
+	// 在FieldIndex中写入FieldData中开始存数据的位置
     indexStream.writeLong(fieldsStream.getFilePointer());
+    // 在FieldData中写入需要存储的fields的数量
     fieldsStream.writeVInt(numStoredFields);
   }
-
+  
+  /**
+   * 关闭
+   * 直接关闭.fdt 和.fdx的流
+   * 并把相对应的引用设置成null, 方便GC
+   */
+  @Override
   public void close() throws IOException {
     try {
       IOUtils.close(fieldsStream, indexStream);
@@ -123,7 +138,13 @@ public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
       fieldsStream = indexStream = null;
     }
   }
-
+  
+  /**
+   * 中断
+   * 1. 关闭.fdt和.fdx的流
+   * 2. 删除.fdt和.fdx文件
+   */
+  @Override
   public void abort() {
     try {
       close();
@@ -132,8 +153,11 @@ public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
         IndexFileNames.segmentFileName(segment, "", FIELDS_EXTENSION),
         IndexFileNames.segmentFileName(segment, "", FIELDS_INDEX_EXTENSION));
   }
-
+  
+  @Override
   public void writeField(FieldInfo info, IndexableField field) throws IOException {
+	// 写如一个Field
+	// 在FieldData写入FieldInfo.number(这个number是根据FIeldName指定的)
     fieldsStream.writeVInt(info.number);
     int bits = 0;
     final BytesRef bytes;
@@ -142,9 +166,13 @@ public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
     // this way we don't bake into indexer all these
     // specific encodings for different fields?  and apps
     // can customize...
-
+    // TODO: 或许一个Field可以直接序列化. 
+    // 不要在Index的各个阶段都要加这样的代码
+    
+    // 看看是不是numeric类型的值
     Number number = field.numericValue();
     if (number != null) {
+      // 数值类型
       if (number instanceof Byte || number instanceof Short || number instanceof Integer) {
         bits |= FIELD_IS_NUMERIC_INT;
       } else if (number instanceof Long) {
@@ -159,6 +187,7 @@ public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
       string = null;
       bytes = null;
     } else {
+      // binary值跟StringValue的区别在哪里?
       bytes = field.binaryValue();
       if (bytes != null) {
         bits |= FIELD_IS_BINARY;
@@ -170,9 +199,11 @@ public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
         }
       }
     }
-
+    
+    // 写入数据类型
     fieldsStream.writeByte((byte) bits);
-
+     
+    // 写入数据
     if (bytes != null) {
       fieldsStream.writeVInt(bytes.length);
       fieldsStream.writeBytes(bytes.bytes, bytes.offset, bytes.length);
@@ -220,6 +251,9 @@ public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
       throw new RuntimeException("fdx size mismatch: docCount is " + numDocs + " but fdx file size is " + indexStream.getFilePointer() + " file=" + indexStream.toString() + "; now aborting this merge to prevent index corruption");
   }
   
+  /**
+   * 合并
+   */
   @Override
   public int merge(MergeState mergeState) throws IOException {
     int docCount = 0;
@@ -227,7 +261,11 @@ public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
     int rawDocLengths[] = new int[MAX_RAW_MERGE_DOCS];
     int idx = 0;
     
+    /**
+     * 迭代mergeState中所有的reader
+     */
     for (AtomicReader reader : mergeState.readers) {
+      // 
       final SegmentReader matchingSegmentReader = mergeState.matchingSegmentReaders[idx++];
       Lucene40StoredFieldsReader matchingFieldsReader = null;
       if (matchingSegmentReader != null) {
@@ -307,12 +345,23 @@ public final class Lucene40StoredFieldsWriter extends StoredFieldsWriter {
     }
     return docCount;
   }
-
+  
+  /**
+   * 拷贝Fields数据, 没有删除
+   * @param mergeState(merge的信息)
+   * @param reader(merge的输入)
+   * @param matchingFieldsReader(命中的Fields的输入)
+   * @param rawDocLengths
+   * @return
+   * @throws IOException
+   */
   private int copyFieldsNoDeletions(MergeState mergeState, final AtomicReader reader,
                                     final Lucene40StoredFieldsReader matchingFieldsReader, int rawDocLengths[])
     throws IOException {
+	// 读取文档的最大数据
     final int maxDoc = reader.maxDoc();
     int docCount = 0;
+    // 有没有命中的FieldsReader有什么区别?
     if (matchingFieldsReader != null) {
       // We can bulk-copy because the fieldInfos are "congruent"
       while (docCount < maxDoc) {

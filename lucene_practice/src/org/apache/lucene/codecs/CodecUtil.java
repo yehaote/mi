@@ -34,6 +34,9 @@ import org.apache.lucene.util.BytesRef;
  * the format you think it is.
  * 
  * @lucene.experimental
+ * <p>
+ * 读取写入 版本头信息 的工具类
+ * 写入编码头信息用来确认你打开的那个文件格式跟你想的一样.
  */
 
 public final class CodecUtil {
@@ -41,6 +44,8 @@ public final class CodecUtil {
 
   /**
    * Constant to identify the start of a codec header.
+   * <p>
+   * 常量用来标识一个编码头的开始
    */
   public final static int CODEC_MAGIC = 0x3fd76c17;
 
@@ -69,15 +74,43 @@ public final class CodecUtil {
    *              less than 128 characters in length.
    * @param version Version number
    * @throws java.io.IOException If there is an I/O error writing to the underlying medium.
+   * <p>
+   * 写入一个编码头, 包含一个String和一个版本号.
+   * 这个头可以被{@link #checkHeader(org.apache.lucene.store.DataInput, String, int, int) checkHeader()}
+   * 解析和验证. 
+   * 编码头 --&gt; Magic(常量),编码名称,版本
+   * <ul>
+   *    <li>Magic --&gt; {@link org.apache.lucene.store.DataOutput#writeInt Uint32}. 
+   *    用来标识是一个编码头的开始, 它的值永远都是 {@value #CODEC_MAGIC}.
+   *    <li>编码名称 --&gt; {@link org.apache.lucene.store.DataOutput#writeString String}.
+   *    一个用来标识这个文件的String.
+   *    <li>版本号 --&gt; {@link org.apache.lucene.store.DataOutput#writeInt Uint32}. 
+   *    记录文件的版本号
+   * </ul>
+   * <p>
+   * 注意编码头的大小跟编码器的名称有很大的关系, 不是固定大小的, 
+   * 不过可以通过{@link #headerLength(String)}获取到.
+   * 
+   * @param out Output stream 输出流
+   * @param codec String to identify this file. It should be simple ASCII, 
+   *              less than 128 characters in length.
+   *              用来标识编码器的.
+   * @param version Version number 版本号
+   * @throws java.io.IOException If there is an I/O error writing to the underlying medium.
    */
   public static void writeHeader(DataOutput out, String codec, int version)
     throws IOException {
+	// 把String转换成BytesRef
     BytesRef bytes = new BytesRef(codec);
+    // bytes.length != codec.length() 说明不是简单的ASCII编码
     if (bytes.length != codec.length() || bytes.length >= 128) {
       throw new IllegalArgumentException("codec must be simple ASCII, less than 128 characters in length [got " + codec + "]");
     }
+    // 写入CODEC_MAGIC
     out.writeInt(CODEC_MAGIC);
+    // 写入String
     out.writeString(codec);
+    // 写本版本
     out.writeInt(version);
   }
 
@@ -87,6 +120,10 @@ public final class CodecUtil {
    * @param codec Codec name.
    * @return length of the entire codec header.
    * @see #writeHeader(org.apache.lucene.store.DataOutput, String, int)
+   * <p>
+   * 计算一个编码头的长度, 9+codec长度,
+   * 虽说codec跟存储的是不一样的编码方式(utf-8, urf-16)不过因为我们限制codec必须是
+   * 简单ASCII所以这两种编码方式的长度是一样的. 
    */
   public static int headerLength(String codec) {
     return 9+codec.length();
@@ -98,6 +135,12 @@ public final class CodecUtil {
    * <p>
    * When reading a file, supply the expected <code>codec</code> and
    * an expected version range (<code>minVersion to maxVersion</code>).
+   * 
+   * <p>
+   * 读取并验证先前使用{@link #writeHeader(org.apache.lucene.store.DataOutput, String, int)}
+   * 写入的编码头是否正确.
+   * 当读取一个文件的时候, 提供对应的<code>codec</code>和预期的版本范围
+   * (<code>minVersion to maxVersion</code>).
    * 
    * @param in Input stream, positioned at the point where the
    *        header was previously written. Typically this is located
@@ -133,7 +176,9 @@ public final class CodecUtil {
   /** Like {@link
    *  #checkHeader(org.apache.lucene.store.DataInput,String,int,int)} except this
    *  version assumes the first int has already been read
-   *  and validated from the input. */
+   *  and validated from the input.
+   *  
+   *  */
   public static int checkHeaderNoMagic(DataInput in, String codec, int minVersion, int maxVersion) throws IOException {
     final String actualCodec = in.readString();
     if (!actualCodec.equals(codec)) {

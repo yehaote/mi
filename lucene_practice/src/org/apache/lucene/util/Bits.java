@@ -29,6 +29,11 @@ public interface Bits {
    *        The result of passing negative or out of bounds values is undefined
    *        by this interface, <b>just don't do it!</b>
    * @return <code>true</code> if the bit is set, <code>false</code> otherwise.
+   * <p>
+   * 根据<code>index</code>返回一个bit的值.
+   * 类似与位图.
+   * @param 0 <= 索引< {@link #length()}. 超出范围的index的返回值没有定义, 不要这样调用
+   * @return 如果设置了的话返回<code>true</code>, 不然返回<code>false</code>.
    */
   public boolean get(int index);
   

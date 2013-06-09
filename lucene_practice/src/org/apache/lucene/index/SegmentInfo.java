@@ -47,9 +47,13 @@ public final class SegmentInfo {
    *  norms, deletions). */
   public static final int YES = 1;          // e.g. have norms; have deletes;
 
-  /** Unique segment name in the directory. */
+  /** Unique segment name in the directory. 
+   *  <p>
+   *  在Directory中唯一的segment名称
+   * */
   public final String name;
 
+  // 当前Segment中的doc的数目
   private int docCount;         // number of docs in seg
 
   /** Where this segment resides. */

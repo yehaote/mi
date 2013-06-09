@@ -37,6 +37,8 @@ import org.apache.lucene.codecs.Codec;
  * directly.
  *
  * @lucene.internal
+ * <p>
+ * 
  */
 
 public final class IndexFileNames {
@@ -117,6 +119,17 @@ public final class IndexFileNames {
    * <b>NOTE:</b> all custom files should be named using this method, or
    * otherwise some structures may fail to handle them properly (such as if they
    * are added to compound files).
+   * <p>
+   * 根据现在指定的segment, 返回一个文件名, 包含segmentName,
+   * 你定义名称和扩展. 现在的文件名的格式是:
+   * &lt;segmentName&gt;(_&lt;name&gt;)(.&lt;ext&gt;).
+   * <p>
+   * <b>NOTE:</b> .&lt;ext&gt; 只有是ext是非空的时候才会被添加.
+   * <p>
+   * <b>NOTE:</b> _&lt;segmentSuffix&gt; 只有在segmentSuffix不是空字符串的时候才会被添加
+   * <p>
+   * <b>NOTE:</b> 所有定制的文件需要用这个方法进行命名, 不然的话有一些结构会处理出错(比如把他们添加到合并文件中)
+   * <p>
    */
   public static String segmentFileName(String segmentName, String segmentSuffix, String ext) {
     if (ext.length() > 0 || segmentSuffix.length() > 0) {

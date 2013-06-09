@@ -32,15 +32,25 @@ import org.apache.lucene.index.StoredFieldVisitor;
  *  This is used by {@link org.apache.lucene.index.IndexReader#document(int)} to load a
  *  document.
  *
- * @lucene.experimental */
+ * @lucene.experimental 
+ * 
+ * <p>
+ * DocumentStoredFieldVisitor 创建一个Document包含所有的存储Field, 
+ * 或者包含指定的Field.
+ * 这个类被用来{@link org.apache.lucene.index.IndexReader#document(int)}读取一个Document.
+ * */
 
 public class DocumentStoredFieldVisitor extends StoredFieldVisitor {
+  // 返回一个Document
   private final Document doc = new Document();
+  // 需要被添加的Field
   private final Set<String> fieldsToAdd;
 
   /** 
    * Load only fields named in the provided <code>Set&lt;String&gt;</code>. 
    * @param fieldsToAdd Set of fields to load, or <code>null</code> (all fields).
+   * <p>
+   * 仅仅加载Set<String>指定的Field, fieldsToAdd指定为null的话就加载所有的.
    */
   public DocumentStoredFieldVisitor(Set<String> fieldsToAdd) {
     this.fieldsToAdd = fieldsToAdd;
@@ -61,9 +71,15 @@ public class DocumentStoredFieldVisitor extends StoredFieldVisitor {
 
   @Override
   public void binaryField(FieldInfo fieldInfo, byte[] value) throws IOException {
+	// 根据byte[]添加一个Field
+	// binaryField都是StoredField?
     doc.add(new StoredField(fieldInfo.name, value));
   }
-
+  
+  /**
+   * 在文档中添加一个TextField, 
+   * 根据当前提供的FieldInfo和String值
+   */
   @Override
   public void stringField(FieldInfo fieldInfo, String value) throws IOException {
     final FieldType ft = new FieldType(TextField.TYPE_STORED);
@@ -105,6 +121,9 @@ public class DocumentStoredFieldVisitor extends StoredFieldVisitor {
    *         the stored information in the field instances is valid,
    *         data such as boosts, indexing options, term vector options,
    *         etc is not set.
+   * <p>
+   * 检索回当前被访问的文档. 返回带存储Field的Document.
+   * 注意: 只有被存储的Field有效, boosts, indexing options, term vector options, 都不包含.
    */
   public Document getDocument() {
     return doc;

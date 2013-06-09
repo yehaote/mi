@@ -26,6 +26,8 @@ import org.apache.lucene.store.IOContext;
 
 /**
  * Controls the format of stored fields
+ * <p>
+ * 控制存储Field的格式
  */
 public abstract class StoredFieldsFormat {
   /** Sole constructor. (For invocation by subclass 
@@ -34,10 +36,16 @@ public abstract class StoredFieldsFormat {
   }
 
   /** Returns a {@link StoredFieldsReader} to load stored
-   *  fields. */
+   *  fields. 
+   *  <p>
+   *  返回一个{@link StoredFieldsReader}去读取存储Field
+   *  */
   public abstract StoredFieldsReader fieldsReader(Directory directory, SegmentInfo si, FieldInfos fn, IOContext context) throws IOException;
 
   /** Returns a {@link StoredFieldsWriter} to write stored
-   *  fields. */
+   *  fields. 
+   *  <p>
+   *  返回一个{@link StoredFieldsWriter}去写入存储Field
+   *  */
   public abstract StoredFieldsWriter fieldsWriter(Directory directory, SegmentInfo si, IOContext context) throws IOException;
 }
