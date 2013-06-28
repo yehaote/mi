@@ -34,6 +34,8 @@ import org.apache.lucene.index.FieldInfo;
  * 
  * @see org.apache.lucene.codecs.PostingsReaderBase
  * @lucene.experimental
+ * 
+ * <p>
  */
 // TODO: find a better name; this defines the API that the
 // terms dict impls use to talk to a postings impl.

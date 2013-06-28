@@ -35,6 +35,9 @@ import org.apache.lucene.store.TrackingDirectoryWrapper;
  * to the segment.
  *
  * @lucene.experimental
+ * <p>
+ * segment信息:
+ * 其中在包含比如segment的name, 在哪个directory下和其中包含的Files
  */
 public final class SegmentInfo {
   
@@ -56,12 +59,15 @@ public final class SegmentInfo {
   // 当前Segment中的doc的数目
   private int docCount;         // number of docs in seg
 
-  /** Where this segment resides. */
+  /** Where this segment resides. 
+   *  <p>
+   *  当前Segment在哪个Directory下
+   * */
   public final Directory dir;
 
-  private boolean isCompoundFile;
+  private boolean isCompoundFile;// 是否使用
 
-  private Codec codec;
+  private Codec codec; // 使用什么编码
 
   private Map<String,String> diagnostics;
   
@@ -241,7 +247,7 @@ public final class SegmentInfo {
     return version;
   }
 
-  private Set<String> setFiles;
+  private Set<String> setFiles;// 当前Segment下包含的文件
 
   /** Sets the files written for this segment. */
   public void setFiles(Set<String> files) {

@@ -51,6 +51,12 @@ import org.apache.lucene.util.FixedBitSet;
  * </ol>
  * 
  * @lucene.experimental
+ * 
+ * 抽象类Term消费者, 消费一个单独的field的terms.
+ * 生命周期:
+ * 1. TermsConsumer在{@link FieldsConsumer#addField(org.apache.lucene.index.FieldInfo)}的时候被返回.
+ * 2. TermConsumer为每一个term返回一个PostingConsumer, {@link #startTerm(org.apache.lucene.util.BytesRef)}.
+ * 
  */
 public abstract class TermsConsumer {
 
@@ -61,7 +67,10 @@ public abstract class TermsConsumer {
 
   /** Starts a new term in this field; this may be called
    *  with no corresponding call to finish if the term had
-   *  no docs. */
+   *  no docs.
+   *  <p>
+   *  在当前Field中开始一个新的Term,  
+   *  */
   public abstract PostingsConsumer startTerm(BytesRef text) throws IOException;
 
   /** Finishes the current term; numDocs must be > 0.

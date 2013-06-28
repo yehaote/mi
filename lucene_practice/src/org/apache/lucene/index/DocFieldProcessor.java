@@ -39,6 +39,9 @@ import org.apache.lucene.util.Counter;
  * 
  * 按照相同名称采集所有的fields, 然后调用per-field consumers去逐个处理这些field.
  * 这个类实际不会做"真正"的工作, 只是负责把fields传给DocFieldConsumer
+ * 
+ * <p>
+ * 一般更新的时候先调用processDocument(), 然后再调用finishDocument().
  */
 
 final class DocFieldProcessor extends DocConsumer {
@@ -84,7 +87,7 @@ final class DocFieldProcessor extends DocConsumer {
     
     // 刷新输出.fdt .fdx
     storedConsumer.flush(state);
-    // 刷新输出.doc .tim .tip
+    // 刷新输出.doc .tim .tip .pos .tvx .tvd .nvd .nvm
     consumer.flush(childFields, state);
 
     // Important to save after asking consumer to flush so

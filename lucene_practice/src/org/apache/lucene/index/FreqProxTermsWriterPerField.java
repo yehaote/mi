@@ -325,7 +325,11 @@ final class FreqProxTermsWriterPerField extends TermsHashConsumerPerField implem
 
   /* Walk through all unique text tokens (Posting
    * instances) found in this field and serialize them
-   * into a single RAM segment. */
+   * into a single RAM segment.
+   * <p>
+   * 
+   * 刷新输出.doc .pos .tim .tip 
+   * */
   void flush(String fieldName, FieldsConsumer consumer,  final SegmentWriteState state)
     throws IOException {
 
@@ -383,6 +387,7 @@ final class FreqProxTermsWriterPerField extends TermsHashConsumerPerField implem
     long sumDocFreq = 0;
 
     Term protoTerm = new Term(fieldName);
+    // 迭代一个Field下所有的Term
     for (int i = 0; i < numTerms; i++) {
       final int termID = termIDs[i];
       //System.out.println("term=" + termID);
@@ -401,6 +406,7 @@ final class FreqProxTermsWriterPerField extends TermsHashConsumerPerField implem
       // TermsConsumer, only calling out to us (passing us the
       // DocsConsumer) to handle delivery of docs/positions
 
+      // 为当前Field下的每一个Term返回一个PostingsConsumer
       final PostingsConsumer postingsConsumer = termsConsumer.startTerm(text);
 
       final int delDocLimit;

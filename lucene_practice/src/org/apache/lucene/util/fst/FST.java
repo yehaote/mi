@@ -456,7 +456,12 @@ public final class FST<T> {
       emptyOutput = v;
     }
   }
-
+  
+  /**
+   * 把当前的FST写入到输出流里面 
+   * @param out
+   * @throws IOException
+   */
   public void save(DataOutput out) throws IOException {
     if (startNode == -1) {
       throw new IllegalStateException("call finish first");
@@ -467,6 +472,7 @@ public final class FST<T> {
     if (packed && !(nodeRefToAddress instanceof PackedInts.Mutable)) {
       throw new IllegalStateException("cannot save a FST which has been loaded from disk ");
     }
+    // 写入头信息
     CodecUtil.writeHeader(out, FILE_FORMAT_NAME, VERSION_CURRENT);
     if (packed) {
       out.writeByte((byte) 1);

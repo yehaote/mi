@@ -42,6 +42,14 @@ import org.apache.lucene.index.Terms;
  * </ol>
  *
  * @lucene.experimental
+ * <p>
+ * 消费terms, doc, freq, prox, offset和payloads posting的抽象类.
+ * 这个类的具体实现, "真正"使用了倒排表(把它以一个指定的格式写入索引).
+ * <p>
+ * 生命周期:
+ * 1. FieldConsumer被SegmentWriteState创建.
+ * 2. 对于每一个Field,  调用FieldInfo, 为当前的Field返回一个TermsConsumer.
+ * 3. 所有的Field被添加完毕以后, 关闭.
  */
 public abstract class FieldsConsumer implements Closeable {
 

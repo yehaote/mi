@@ -29,6 +29,9 @@ import org.apache.lucene.store.DataOutput;
  * <p>Note that any operation that returns NO_OUTPUT must
  * return the same singleton object from {@link
  * #getNoOutput}.</p>
+ * 
+ * <p>
+ * 1
  *
  * @lucene.experimental
  */

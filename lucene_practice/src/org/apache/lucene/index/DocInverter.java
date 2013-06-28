@@ -60,7 +60,9 @@ final class DocInverter extends DocFieldConsumer {
     }
     
     // 通过TermHash和NormsConsumer去flush?
+    // 刷新输出 .doc .tim .tip .pos
     consumer.flush(childFieldsToFlush, state);
+    // 刷新输出 .nvd nvm
     endConsumer.flush(endChildFieldsToFlush, state);
   }
 

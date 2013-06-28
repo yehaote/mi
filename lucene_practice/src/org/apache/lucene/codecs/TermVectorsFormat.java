@@ -26,10 +26,13 @@ import org.apache.lucene.store.IOContext;
 
 /**
  * Controls the format of term vectors
+ * <p>
+ * 控制term vectors的格式
  */
 public abstract class TermVectorsFormat {
   /** Sole constructor. (For invocation by subclass 
-   *  constructors, typically implicit.) */
+   *  constructors, typically implicit.) 
+   *  */
   protected TermVectorsFormat() {
   }
 

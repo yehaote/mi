@@ -172,6 +172,111 @@ import org.apache.lucene.util.packed.PackedInts;
  *
  * @see org.apache.lucene.codecs.BlockTreeTermsReader
  * @lucene.experimental
+ * 
+ * <p>
+ * 基于块的terms索引和dictionary写入器
+ * <p>
+ * 写入term词典和索引, 基于块编码(跨度为列?) 每一个terms的集合中
+ * 每一个term的元数据在两个terms索引之间.
+ * <p>
+ * 文件:
+ * <ul>
+ *   <li><tt>.tim</tt>: <a href="#Termdictionary">Term词典</a></li>
+ *   <li><tt>.tip</tt>: <a href="#Termindex">Term索引</a></li>
+ * </ul>
+ * <p>
+ * <a name="Termdictionary" id="Termdictionary"></a>
+ * <h3>Term词典</h3>
+ *
+ * <p>
+ * .tim文件中包含了一个term的列表.
+ * 每一项term包含类term级信息(docfreq DF 文档频率)和一个
+ * per-term级别的元数据(一般是一个指向posting list的指针).
+ * The .tim file contains the list of terms in each
+ * field along with per-term statistics (such as docfreq)
+ * and per-term metadata (typically pointers to the postings list
+ * for that term in the inverted index).
+ * </p>
+ *
+ * <p>
+ * .tim文件中的内容被整理成数据块的形式:
+ * 每一个包含一个可变数量的内容(默认25-48), 
+ * 每一项内容是一个term或者是指向子块的一个引用.
+ * </p>
+ *
+ * <p>
+ * 注意: term词典可以被挂载不同的postings实现:
+ * posting写入/读取器实际上对每个posting的元数据和term的元数据负责编码和解码.
+ * </p>
+ *
+ * <ul>
+ * <!-- TODO: expand on this, its not really correct and doesnt explain sub-blocks etc -->
+ * <!-- TODO: 解释下面的东西, 实际不是很准确也没有解释子块 -->
+ *    <li>TermsDict (.tim) --&gt; Header, <i>Postings Metadata</i>, Block<sup>NumBlocks</sup>,
+ *                               FieldSummary, DirOffset</li>
+ *    <li>Block --&gt; SuffixBlock, StatsBlock, MetadataBlock</li>
+ *    <li>SuffixBlock --&gt; EntryCount, SuffixLength, Byte<sup>SuffixLength</sup></li>
+ *    <li>StatsBlock --&gt; StatsLength, &lt;DocFreq, TotalTermFreq&gt;<sup>EntryCount</sup></li>
+ *    <li>MetadataBlock --&gt; MetaLength, &lt;<i>Term Metadata</i>&gt;<sup>EntryCount</sup></li>
+ *    <li>FieldSummary --&gt; NumFields, &lt;FieldNumber, NumTerms, RootCodeLength, Byte<sup>RootCodeLength</sup>,
+ *                            SumDocFreq, DocCount&gt;<sup>NumFields</sup></li>
+ *    <li>Header --&gt; {@link org.apache.lucene.codecs.CodecUtil#writeHeader CodecHeader}</li>
+ *    <li>DirOffset --&gt; {@link org.apache.lucene.store.DataOutput#writeLong Uint64}</li>
+ *    <li>EntryCount,SuffixLength,StatsLength,DocFreq,MetaLength,NumFields,
+ *        FieldNumber,RootCodeLength,DocCount --&gt; {@link org.apache.lucene.store.DataOutput#writeVInt VInt}</li>
+ *    <li>TotalTermFreq,NumTerms,SumTotalTermFreq,SumDocFreq --&gt; 
+ *        {@link org.apache.lucene.store.DataOutput#writeVLong VLong}</li>
+ * </ul>
+ * <p>Notes:</p>
+ * <ul>
+ *    <li>Header is a {@link org.apache.lucene.codecs.CodecUtil#writeHeader CodecHeader} storing the version information
+ *        for the BlockTree implementation.</li>
+ *    <li>DirOffset is a pointer to the FieldSummary section.</li>
+ *    <li>DocFreq is the count of documents which contain the term.</li>
+ *    <li>TotalTermFreq is the total number of occurrences of the term. This is encoded
+ *        as the difference between the total number of occurrences and the DocFreq.</li>
+ *    <li>FieldNumber is the fields number from {@link org.apache.lucene.index.FieldInfos}. (.fnm)</li>
+ *    <li>NumTerms is the number of unique terms for the field.</li>
+ *    <li>RootCode points to the root block for the field.</li>
+ *    <li>SumDocFreq is the total number of postings, the number of term-document pairs across
+ *        the entire field.</li>
+ *    <li>DocCount is the number of documents that have at least one posting for this field.</li>
+ *    <li>PostingsMetadata and TermMetadata are plugged into by the specific postings implementation:
+ *        these contain arbitrary per-file data (such as parameters or versioning information) 
+ *        and per-term data (such as pointers to inverted files).
+ * </ul>
+ * <a name="Termindex" id="Termindex"></a>
+ * <h3>Term Index</h3>
+ * <p>
+ * .tip文件包含了指向词典(.tim)的索引, 通过.tip文件可以达到随机访问的效果.
+ * 这个文件还用来去判断一个指定的term是否在磁盘上存在(在.tim文件中), 减少磁盘seek.
+ * </p>
+ * <ul>
+ *   <li>TermsIndex (.tip) --&gt; Header, FSTIndex<sup>NumFields</sup>
+ *                                &lt;IndexStartFP&gt;<sup>NumFields</sup>, DirOffset</li>
+ *   <li>Header --&gt; {@link org.apache.lucene.codecs.CodecUtil#writeHeader CodecHeader}文件头</li>
+ *   <li>DirOffset --&gt; {@link org.apache.lucene.store.DataOutput#writeLong Uint64}</li>
+ *   <li>IndexStartFP --&gt; {@link org.apache.lucene.store.DataOutput#writeVLong VLong}</li>
+ *   <!-- TODO: better describe FST output here -->
+ *   <li>FSTIndex --&gt; {@link org.apache.lucene.util.fst.FST FST&lt;byte[]&gt;}</li>
+ * </ul>
+ * <p>Notes:</p>
+ * <ul>
+ *   <li>The .tip file contains a separate FST for each
+ *       field.  The FST maps a term prefix to the on-disk
+ *       block that holds all terms starting with that
+ *       prefix.  Each field's IndexStartFP points to its
+ *       FST.</li>
+ *   <li>DirOffset is a pointer to the start of the IndexStartFPs
+ *       for all fields</li>
+ *   <li>It's possible that an on-disk block would contain
+ *       too many terms (more than the allowed maximum
+ *       (default: 48)).  When this happens, the block is
+ *       sub-divided into new blocks (called "floor
+ *       blocks"), and then the output in the FST for the
+ *       block's prefix encodes the leading byte of each
+ *       sub-block, and its file pointer.
+ * </ul>
  */
 
 public class BlockTreeTermsWriter extends FieldsConsumer {
@@ -194,7 +299,10 @@ public class BlockTreeTermsWriter extends FieldsConsumer {
   static final int OUTPUT_FLAG_IS_FLOOR = 0x1;
   static final int OUTPUT_FLAG_HAS_TERMS = 0x2;
 
-  /** Extension of terms file */
+  /** Extension of terms file
+   *  terms文件的扩展名
+   *  词典的扩展名
+   * */
   static final String TERMS_EXTENSION = "tim";
   final static String TERMS_CODEC_NAME = "BLOCK_TREE_TERMS_DICT";
 
@@ -207,7 +315,10 @@ public class BlockTreeTermsWriter extends FieldsConsumer {
   /** Current terms format. */
   public static final int TERMS_VERSION_CURRENT = TERMS_VERSION_APPEND_ONLY;
 
-  /** Extension of terms index file */
+  /** Extension of terms index file 
+   *  terms index文件的扩展名
+   *  
+   * */
   static final String TERMS_INDEX_EXTENSION = "tip";
   final static String TERMS_INDEX_CODEC_NAME = "BLOCK_TREE_TERMS_INDEX";
 
@@ -228,15 +339,18 @@ public class BlockTreeTermsWriter extends FieldsConsumer {
   final PostingsWriterBase postingsWriter;
   final FieldInfos fieldInfos;
   FieldInfo currentField;
-
+  
+  /*
+   * Field的元数据
+   */
   private static class FieldMetaData {
-    public final FieldInfo fieldInfo;
-    public final BytesRef rootCode;
-    public final long numTerms;
-    public final long indexStartFP;
-    public final long sumTotalTermFreq;
-    public final long sumDocFreq;
-    public final int docCount;
+    public final FieldInfo fieldInfo; //Field类型信息
+    public final BytesRef rootCode; // 数据?
+    public final long numTerms; // term数量
+    public final long indexStartFP; //
+    public final long sumTotalTermFreq; // 
+    public final long sumDocFreq; // 
+    public final int docCount; // 
 
     public FieldMetaData(FieldInfo fieldInfo, BytesRef rootCode, long numTerms, long indexStartFP, long sumTotalTermFreq, long sumDocFreq, int docCount) {
       assert numTerms > 0;
@@ -277,7 +391,8 @@ public class BlockTreeTermsWriter extends FieldsConsumer {
     if (2*(minItemsInBlock-1) > maxItemsInBlock) {
       throw new IllegalArgumentException("maxItemsInBlock must be at least 2*(minItemsInBlock-1); got maxItemsInBlock=" + maxItemsInBlock + " minItemsInBlock=" + minItemsInBlock);
     }
-
+    
+    // 创建.tim文件 
     final String termsFileName = IndexFileNames.segmentFileName(state.segmentInfo.name, state.segmentSuffix, TERMS_EXTENSION);
     out = state.directory.createOutput(termsFileName, state.context);
     boolean success = false;
@@ -289,7 +404,8 @@ public class BlockTreeTermsWriter extends FieldsConsumer {
       writeHeader(out);
 
       //DEBUG = state.segmentName.equals("_4a");
-
+      
+      // 创建.tip文件
       final String termsIndexFileName = IndexFileNames.segmentFileName(state.segmentInfo.name, state.segmentSuffix, TERMS_INDEX_EXTENSION);
       indexOut = state.directory.createOutput(termsIndexFileName, state.context);
       writeIndexHeader(indexOut);
@@ -477,7 +593,10 @@ public class BlockTreeTermsWriter extends FieldsConsumer {
   }
 
   final RAMOutputStream scratchBytes = new RAMOutputStream();
-
+  
+  /**
+   * Terms信息写入器
+   */
   class TermsWriter extends TermsConsumer {
     private final FieldInfo fieldInfo;
     private long numTerms;
@@ -998,12 +1117,15 @@ public class BlockTreeTermsWriter extends FieldsConsumer {
       //if (DEBUG) System.out.println("BTTW.finishTerm term=" + fieldInfo.name + ":" + toString(text) + " seg=" + segment + " df=" + stats.docFreq);
 
       blockBuilder.add(Util.toIntsRef(text, scratchIntsRef), noOutputs.getNoOutput());
+      // 把当前的Term信息的添加到pending中
       pending.add(new PendingTerm(BytesRef.deepCopyOf(text), stats));
       postingsWriter.finishTerm(stats);
       numTerms++;
     }
 
     // Finishes all terms in this field
+    // 完成当前所有的Field 每一个Field一次
+    // 这里的Field是所有文档中的Field, 都整理完的
     @Override
     public void finish(long sumTotalTermFreq, long sumDocFreq, int docCount) throws IOException {
       if (numTerms > 0) {
@@ -1058,10 +1180,12 @@ public class BlockTreeTermsWriter extends FieldsConsumer {
       
       final long dirStart = out.getFilePointer();
       final long indexDirStart = indexOut.getFilePointer();
-
+      // 在.tim中写入Field的数量
       out.writeVInt(fields.size());
       
+      // 迭代每一个FieldMetaData
       for(FieldMetaData field : fields) {
+    	// 对于每一个FieldMetaData在.tim中写入 fieldNumber, numerTerms, 
         //System.out.println("  field " + field.fieldInfo.name + " " + field.numTerms + " terms");
         out.writeVInt(field.fieldInfo.number);
         out.writeVLong(field.numTerms);

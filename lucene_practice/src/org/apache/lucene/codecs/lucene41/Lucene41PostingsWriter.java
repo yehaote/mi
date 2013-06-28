@@ -117,17 +117,19 @@ public final class Lucene41PostingsWriter extends PostingsWriterBase {
   // TODO: does this ctor even make sense?
   public Lucene41PostingsWriter(SegmentWriteState state, float acceptableOverheadRatio) throws IOException {
     super();
-
+    // 创建 .doc文件
     docOut = state.directory.createOutput(IndexFileNames.segmentFileName(state.segmentInfo.name, state.segmentSuffix, Lucene41PostingsFormat.DOC_EXTENSION),
                                           state.context);
     IndexOutput posOut = null;
     IndexOutput payOut = null;
     boolean success = false;
     try {
+      // 写入.doc文件的文件头
       CodecUtil.writeHeader(docOut, DOC_CODEC, VERSION_CURRENT);
       forUtil = new ForUtil(acceptableOverheadRatio, docOut);
       if (state.fieldInfos.hasProx()) {
         posDeltaBuffer = new int[MAX_DATA_SIZE];
+        // 创建 .doc文件, 并写入头
         posOut = state.directory.createOutput(IndexFileNames.segmentFileName(state.segmentInfo.name, state.segmentSuffix, Lucene41PostingsFormat.POS_EXTENSION),
                                               state.context);
         CodecUtil.writeHeader(posOut, POS_CODEC, VERSION_CURRENT);
@@ -147,7 +149,8 @@ public final class Lucene41PostingsWriter extends PostingsWriterBase {
           offsetStartDeltaBuffer = null;
           offsetLengthBuffer = null;
         }
-
+        
+        // 如果有payload或者offset信息需要存储的话, 创建.pay文件
         if (state.fieldInfos.hasPayloads() || state.fieldInfos.hasOffsets()) {
           payOut = state.directory.createOutput(IndexFileNames.segmentFileName(state.segmentInfo.name, state.segmentSuffix, Lucene41PostingsFormat.PAY_EXTENSION),
                                                 state.context);

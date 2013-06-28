@@ -127,7 +127,8 @@ final class TermsHash extends InvertedDocConsumer {
         nextChildFields.put(entry.getKey(), perField.nextPerField);
       }
     }
-
+    
+    // 刷新输出.doc .pos .tim .tip
     consumer.flush(childFields, state);
 
     if (nextTermsHash != null) {

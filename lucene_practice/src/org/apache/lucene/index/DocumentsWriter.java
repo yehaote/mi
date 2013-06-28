@@ -375,6 +375,7 @@ final class DocumentsWriter {
        
       final DocumentsWriterPerThread dwpt = perThread.dwpt;
       try {
+    	// 调用DocumentsWriterPerThread去更新文档
         final int docCount = dwpt.updateDocuments(docs, analyzer, delTerm);
         numDocsInRAM.addAndGet(docCount);
       } finally {
@@ -417,7 +418,7 @@ final class DocumentsWriter {
       }
       final DocumentsWriterPerThread dwpt = perThread.dwpt;
       try {
-    	// 
+    	// 调用DocumentsWriterPerThread去更新文档
         dwpt.updateDocument(doc, analyzer, delTerm); 
         numDocsInRAM.incrementAndGet();
       } finally {

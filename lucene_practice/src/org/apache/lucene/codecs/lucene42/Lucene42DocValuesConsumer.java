@@ -70,9 +70,11 @@ class Lucene42DocValuesConsumer extends DocValuesConsumer {
     maxDoc = state.segmentInfo.getDocCount();
     boolean success = false;
     try {
+      // 创建.dvd文件并写入文件头
       String dataName = IndexFileNames.segmentFileName(state.segmentInfo.name, state.segmentSuffix, dataExtension);
       data = state.directory.createOutput(dataName, state.context);
       CodecUtil.writeHeader(data, dataCodec, VERSION_CURRENT);
+      // 创建.dvm文件并写入文件头
       String metaName = IndexFileNames.segmentFileName(state.segmentInfo.name, state.segmentSuffix, metaExtension);
       meta = state.directory.createOutput(metaName, state.context);
       CodecUtil.writeHeader(meta, metaCodec, VERSION_CURRENT);

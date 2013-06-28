@@ -127,6 +127,7 @@ public abstract class PerFieldPostingsFormat extends PostingsFormat {
                                                           segmentWriteState.segmentSuffix,
                                                           getSuffix(formatName, Integer.toString(suffix)));
         consumer = new FieldsConsumerAndSuffix();
+        // BlockTreeTermsWriter
         consumer.consumer = format.fieldsConsumer(new SegmentWriteState(segmentWriteState, segmentSuffix));
         consumer.suffix = suffix;
         formats.put(format, consumer);
